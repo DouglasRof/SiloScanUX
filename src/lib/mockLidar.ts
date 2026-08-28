@@ -24,6 +24,13 @@ function pseudoNoise(i: number, j: number, seed: number): number {
   return x - Math.floor(x)
 }
 
+/** Slow multi-lobe wave across the surface — asymmetric drift from the fill spout and
+ * settling, layered under the fine per-cell texture noise so the topography reads as a
+ * real grain pile rather than a uniformly bumpy cone. */
+function surfaceRipple(rNorm: number, angleRad: number, seed: number): number {
+  return Math.sin(angleRad * 3 + seed * 1.7) * 0.6 * rNorm + Math.sin(angleRad * 2 - rNorm * 5 + seed * 0.9) * 0.4
+}
+
 function buildPoints(
   dims: SiloDimensions,
   mode: FillMode,
@@ -38,8 +45,10 @@ function buildPoints(
     const radiusM = rNorm * R
     for (let j = 0; j < opts.sectors; j++) {
       const angleDeg = ((j + 0.5) / opts.sectors) * 360
-      const noise = (pseudoNoise(i, j, opts.seedOffset) - 0.5) * 2 * opts.noiseM
-      const raw = base + amplitude * shapeAt(rNorm, mode) + noise
+      const angleRad = angleDeg * DEG
+      const fineNoise = (pseudoNoise(i, j, opts.seedOffset) - 0.5) * 2 * (opts.noiseM * 0.35)
+      const rippleNoise = surfaceRipple(rNorm, angleRad, opts.seedOffset) * (opts.noiseM * 0.9)
+      const raw = base + amplitude * shapeAt(rNorm, mode) + fineNoise + rippleNoise
       const heightM = Math.round(raw / opts.resolutionM) * opts.resolutionM
       points.push({ angleDeg, radiusM, heightM })
     }
@@ -76,9 +85,9 @@ export function generateSyntheticScan(
   options: GeneratorOptions = {},
 ): LidarScan {
   const opts: Required<GeneratorOptions> = {
-    rings: options.rings ?? 22,
-    sectors: options.sectors ?? 48,
-    noiseM: options.noiseM ?? 0.015,
+    rings: options.rings ?? 40,
+    sectors: options.sectors ?? 96,
+    noiseM: options.noiseM ?? 0.022,
     resolutionM: options.resolutionM ?? 0.01,
     seedOffset,
   }

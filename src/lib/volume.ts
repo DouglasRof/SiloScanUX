@@ -62,8 +62,8 @@ const TWO_PI = Math.PI * 2
 export function buildHeightGrid(
   points: LidarPoint[],
   siloRadiusM: number,
-  rings = 24,
-  sectors = 48,
+  rings = 40,
+  sectors = 96,
 ): HeightGrid {
   const ringRadii = Array.from({ length: rings + 1 }, (_, i) => (siloRadiusM * i) / rings)
   const sectorAngles = Array.from({ length: sectors + 1 }, (_, i) => (TWO_PI * i) / sectors)

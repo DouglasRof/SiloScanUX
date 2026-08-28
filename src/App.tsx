@@ -7,12 +7,14 @@ import { SettingsModal } from './components/modals/SettingsModal'
 import { AlertsPanel } from './components/modals/AlertsPanel'
 import { ReportsModal } from './components/modals/ReportsModal'
 import { useSiloStore } from './store/useSiloStore'
+import { useTheme } from './hooks/useTheme'
 
 type ModalKind = 'settings' | 'alerts' | 'reports' | null
 
 export default function App() {
   const [activeRail, setActiveRail] = useState('dashboard')
   const [modal, setModal] = useState<ModalKind>(null)
+  const { theme, toggleTheme } = useTheme()
 
   const tick = useSiloStore((s) => s.tick)
   const siloName = useSiloStore((s) => s.siloName)
@@ -27,6 +29,7 @@ export default function App() {
     <div className="flex h-screen w-screen overflow-hidden bg-(--color-panel)">
       <IconRail
         active={activeRail}
+        alertCount={alerts.length}
         onSelect={setActiveRail}
         onOpenSettings={() => setModal('settings')}
         onOpenReports={() => setModal('reports')}
@@ -34,10 +37,10 @@ export default function App() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar siloName={siloName} alertCount={alerts.length} onOpenAlerts={() => setModal('alerts')} onOpenSettings={() => setModal('settings')} />
+        <TopBar siloName={siloName} theme={theme} onToggleTheme={toggleTheme} />
 
         <div className="flex min-h-0 flex-1">
-          <LeftPanel onOpenReports={() => setModal('reports')} onOpenSettings={() => setModal('settings')} onOpenAlerts={() => setModal('alerts')} />
+          <LeftPanel />
           <main className="min-w-0 flex-1">
             <SiloCanvas />
           </main>

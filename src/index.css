@@ -29,6 +29,30 @@
   color-scheme: light;
 }
 
+.dark {
+  color-scheme: dark;
+
+  --color-app-from: #0b1621;
+  --color-app-to: #142433;
+  --color-panel: #131c26;
+  --color-panel-soft: #0d151d;
+  --color-ink: #eef3f7;
+  --color-ink-soft: #9fb0bc;
+  --color-ink-faint: #64757f;
+  --color-line: #253645;
+
+  --color-brand: #4a95d9;
+  --color-brand-dark: #a9d4f7;
+  --color-brand-soft: #1c3348;
+
+  --color-good: #34c17f;
+  --color-good-soft: #123625;
+  --color-warn: #e8a23a;
+  --color-warn-soft: #3a2a12;
+  --color-danger: #e2726f;
+  --color-danger-soft: #3a1b1a;
+}
+
 html,
 body,
 #root {

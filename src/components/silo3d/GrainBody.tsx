@@ -23,7 +23,7 @@ export function GrainBody({ dims, volume }: { dims: SiloDimensions; volume: Volu
   return (
     <group>
       <mesh geometry={geometry} castShadow receiveShadow>
-        <meshStandardMaterial color={GRAIN_COLOR} roughness={0.95} metalness={0} />
+        <meshStandardMaterial color={GRAIN_COLOR} vertexColors roughness={0.92} metalness={0} />
       </mesh>
       <Line points={ringPoints} color="#5fd4e8" lineWidth={2} transparent opacity={0.85} />
     </group>
