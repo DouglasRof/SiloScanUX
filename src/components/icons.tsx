@@ -28,16 +28,6 @@ export function ClipboardIcon() {
   )
 }
 
-export function DocIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4.5 w-4.5">
-      <path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V5A1.5 1.5 0 0 1 7 3.5Z" strokeLinejoin="round" />
-      <path d="M14 3.5V8h4" strokeLinejoin="round" />
-      <path d="M9 12.5h6M9 15.5h6M9 9.5h2" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 // Rounded-tooth cog — deliberately distinct from a sun icon (rays only, no rim/teeth).
 export function GearIcon() {
   return (

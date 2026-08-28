@@ -4,6 +4,7 @@ import { STANDARD_SILOS, CUSTOM_SILO_ID } from '../../data/standardSilos'
 import { GRAIN_PROFILES } from '../../data/grainProfiles'
 import { totalCapacityM3 } from '../../lib/volume'
 import type { FillMode } from '../../lib/mockLidar'
+import { TEXT_INPUT_CLASS } from '../../lib/formStyles'
 import { Modal } from './Modal'
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -15,8 +16,13 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-const inputClass =
-  'w-full rounded-lg border border-(--color-line) bg-(--color-panel-soft) px-2.5 py-1.5 text-sm text-(--color-ink) outline-none focus:border-(--color-brand)'
+const inputClass = `${TEXT_INPUT_CLASS} px-2.5 py-1.5`
+
+/** Dimension fields can't go negative — a stray "-" typed into a number input would
+ * otherwise flow straight into totalCapacityM3() and produce a nonsensical capacity. */
+function nonNegative(value: string): number {
+  return Math.max(0, Number(value) || 0)
+}
 
 const siloLines = [...new Set(STANDARD_SILOS.map((s) => s.line))]
 
@@ -93,27 +99,30 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             <input
               type="number"
               step="0.1"
+              min={0}
               className={inputClass}
               value={dims.diameterM}
-              onChange={(e) => setCustomDimensions({ diameterM: Number(e.target.value) || 0 })}
+              onChange={(e) => setCustomDimensions({ diameterM: nonNegative(e.target.value) })}
             />
           </Field>
           <Field label="Altura da parede (m)">
             <input
               type="number"
               step="0.1"
+              min={0}
               className={inputClass}
               value={dims.cylinderHeightM}
-              onChange={(e) => setCustomDimensions({ cylinderHeightM: Number(e.target.value) || 0 })}
+              onChange={(e) => setCustomDimensions({ cylinderHeightM: nonNegative(e.target.value) })}
             />
           </Field>
           <Field label="Altura do telhado (m)">
             <input
               type="number"
               step="0.1"
+              min={0}
               className={inputClass}
               value={dims.roofHeightM}
-              onChange={(e) => setCustomDimensions({ roofHeightM: Number(e.target.value) || 0 })}
+              onChange={(e) => setCustomDimensions({ roofHeightM: nonNegative(e.target.value) })}
             />
           </Field>
           <Field label="Tipo de fundo">
@@ -132,18 +141,20 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 <input
                   type="number"
                   step="0.1"
+                  min={0}
                   className={inputClass}
                   value={dims.hopperHeightM}
-                  onChange={(e) => setCustomDimensions({ hopperHeightM: Number(e.target.value) || 0 })}
+                  onChange={(e) => setCustomDimensions({ hopperHeightM: nonNegative(e.target.value) })}
                 />
               </Field>
               <Field label="Diâmetro da saída (m)">
                 <input
                   type="number"
                   step="0.05"
+                  min={0}
                   className={inputClass}
                   value={dims.outletDiameterM}
-                  onChange={(e) => setCustomDimensions({ outletDiameterM: Number(e.target.value) || 0 })}
+                  onChange={(e) => setCustomDimensions({ outletDiameterM: nonNegative(e.target.value) })}
                 />
               </Field>
             </>
@@ -174,6 +185,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               max={100}
               value={targetLevelPercent}
               onChange={(e) => setTargetLevelPercent(Number(e.target.value))}
+              aria-label="Nível alvo do silo (%)"
               className="flex-1 accent-(--color-brand)"
             />
             <span className="w-12 text-right text-sm font-bold tabular">{targetLevelPercent.toFixed(0)}%</span>

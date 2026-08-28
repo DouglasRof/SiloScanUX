@@ -1,12 +1,17 @@
 import type { SiloDimensions, VolumeResult } from '../../types/silo'
 import { profileAt, radialProfile } from '../../lib/topography'
-import { hopperOutletRadius, legClearanceM } from '../../lib/volume'
+import {
+  hopperOutletRadius,
+  legClearanceM,
+  LEG_BOTTOM_RADIUS_FRAC,
+  LEG_BRACE_FRAC,
+  LEG_TOP_HEIGHT_FRAC,
+  LEG_TOP_RADIUS_FRAC,
+} from '../../lib/volume'
 
 const PAD = 34
 const CONTENT_H = 260
 const PROFILE_SAMPLES = 40
-const LEG_TOP_FRAC = 0.82
-const LEG_BOTTOM_FRAC = 1.3
 
 export function SiloElevationView({ dims, volume }: { dims: SiloDimensions; volume: VolumeResult }) {
   const legClearance = legClearanceM(dims)
@@ -14,7 +19,7 @@ export function SiloElevationView({ dims, volume }: { dims: SiloDimensions; volu
   const pxPerM = CONTENT_H / Math.max(totalHeight + legClearance, 0.1)
   const R = dims.diameterM / 2
   const halfD = R * pxPerM
-  const legBottomHalf = legClearance > 0 ? R * LEG_BOTTOM_FRAC * pxPerM : halfD
+  const legBottomHalf = legClearance > 0 ? R * LEG_BOTTOM_RADIUS_FRAC * pxPerM : halfD
   const width = Math.max(halfD, legBottomHalf) * 2 + PAD * 2
   const height = CONTENT_H + PAD * 2
   const cx = width / 2
@@ -28,9 +33,12 @@ export function SiloElevationView({ dims, volume }: { dims: SiloDimensions; volu
   const maxHeight = dims.cylinderHeightM + Math.max(dims.roofHeightM, 0)
 
   const groundY = yHopperBottom + legClearance * pxPerM
-  const legTopHalf = R * LEG_TOP_FRAC * pxPerM
-  const legTopY = yCylBottom + dims.hopperHeightM * 0.15 * pxPerM
-  const braceY = legTopY + (groundY - legTopY) * 0.55
+  const legTopHalf = R * LEG_TOP_RADIUS_FRAC * pxPerM
+  const legTopY = yCylBottom + dims.hopperHeightM * LEG_TOP_HEIGHT_FRAC * pxPerM
+  const braceY = legTopY + (groundY - legTopY) * LEG_BRACE_FRAC
+  // Same fraction along the leg's radius as braceY is along its height, so the brace
+  // endpoints land exactly on the diagonal leg lines instead of drifting off them.
+  const braceHalf = legTopHalf + (legBottomHalf - legTopHalf) * LEG_BRACE_FRAC
 
   const heightToY = (hM: number) => yCylBottom - hM * pxPerM
 
@@ -116,14 +124,7 @@ export function SiloElevationView({ dims, volume }: { dims: SiloDimensions; volu
         <g stroke="var(--color-ink-faint)" strokeWidth={2} strokeLinecap="round" fill="none">
           <line x1={cx - legTopHalf} y1={legTopY} x2={cx - legBottomHalf} y2={groundY} />
           <line x1={cx + legTopHalf} y1={legTopY} x2={cx + legBottomHalf} y2={groundY} />
-          <line
-            x1={cx - legTopHalf - (legTopHalf - legBottomHalf) * 0.45}
-            y1={braceY}
-            x2={cx + legTopHalf + (legTopHalf - legBottomHalf) * 0.45}
-            y2={braceY}
-            strokeWidth={1.2}
-            opacity={0.7}
-          />
+          <line x1={cx - braceHalf} y1={braceY} x2={cx + braceHalf} y2={braceY} strokeWidth={1.2} opacity={0.7} />
           <line x1={cx - legBottomHalf - 9} y1={groundY} x2={cx - legBottomHalf + 9} y2={groundY} strokeWidth={3} />
           <line x1={cx + legBottomHalf - 9} y1={groundY} x2={cx + legBottomHalf + 9} y2={groundY} strokeWidth={3} />
         </g>

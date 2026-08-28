@@ -4,10 +4,14 @@ import { SiloModel } from './SiloModel'
 import { GrainBody } from './GrainBody'
 import { Annotations } from './Annotations'
 
+// Flat-bottom silos have no legs (legClearanceM returns 0) but the shadow-catcher plane
+// should still sit a hair below the hopper/base rather than exactly flush with it.
+const SHADOW_PLANE_MIN_OFFSET_M = 0.11
+
 export function SiloScene() {
   const dims = useSiloStore((s) => s.dims)
   const volume = useSiloStore((s) => s.volume)
-  const groundY = -dims.hopperHeightM - Math.max(0.11, legClearanceM(dims))
+  const groundY = -dims.hopperHeightM - Math.max(SHADOW_PLANE_MIN_OFFSET_M, legClearanceM(dims))
 
   return (
     <group>

@@ -30,6 +30,12 @@ export default function App() {
     return () => clearInterval(interval)
   }, [tick])
 
+  function handleLogout() {
+    setModal(null)
+    setActiveRail('dashboard')
+    setIsLoggedIn(false)
+  }
+
   if (!isLoggedIn) {
     return <LoginScreen onLogin={() => setIsLoggedIn(true)} />
   }
@@ -46,7 +52,7 @@ export default function App() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar siloName={siloName} theme={theme} onToggleTheme={toggleTheme} onLogout={() => setIsLoggedIn(false)} />
+        <TopBar siloName={siloName} theme={theme} onToggleTheme={toggleTheme} onLogout={handleLogout} />
 
         <div className="flex min-h-0 flex-1">
           <LeftPanel />

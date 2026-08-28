@@ -1,9 +1,16 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { Line } from '@react-three/drei'
 import type { SiloDimensions } from '../../types/silo'
 import { buildCorrugatedCylinderGeometry } from '../../lib/corrugated'
-import { hopperOutletRadius, legClearanceM } from '../../lib/volume'
+import {
+  hopperOutletRadius,
+  legClearanceM,
+  LEG_BOTTOM_RADIUS_FRAC,
+  LEG_BRACE_FRAC,
+  LEG_TOP_HEIGHT_FRAC,
+  LEG_TOP_RADIUS_FRAC,
+} from '../../lib/volume'
 import { GlassWallMaterial } from './GlassWallMaterial'
 
 const PIPE_ANGLE = (3 * Math.PI) / 4
@@ -18,29 +25,41 @@ interface Leg {
   bracePoint: THREE.Vector3
 }
 
+/** Disposes the previous geometry whenever a new one replaces it (or on unmount) — geometry
+ * handed to <mesh> through the `geometry` prop, rather than as a JSX <bufferGeometry>
+ * child, isn't auto-disposed by R3F when the memo producing it recomputes. */
+function useDisposableGeometry<T extends THREE.BufferGeometry>(geometry: T): T {
+  useEffect(() => () => geometry.dispose(), [geometry])
+  return geometry
+}
+
 export function SiloModel({ dims }: { dims: SiloDimensions }) {
   const R = dims.diameterM / 2
   const r0 = hopperOutletRadius(dims)
 
-  const wallGeometry = useMemo(
-    () => buildCorrugatedCylinderGeometry(R, R, dims.cylinderHeightM, 128, Math.max(24, Math.round(R * 10)), 0.018),
-    [R, dims.cylinderHeightM],
+  const wallGeometry = useDisposableGeometry(
+    useMemo(
+      () => buildCorrugatedCylinderGeometry(R, R, dims.cylinderHeightM, 128, Math.max(24, Math.round(R * 10)), 0.018),
+      [R, dims.cylinderHeightM],
+    ),
   )
 
-  const roofGeometry = useMemo(() => new THREE.ConeGeometry(R * 1.01, dims.roofHeightM, 128), [R, dims.roofHeightM])
-  const hopperGeometry = useMemo(
-    () => buildCorrugatedCylinderGeometry(R, r0, dims.hopperHeightM, 128, Math.max(24, Math.round(R * 10)), 0.014),
-    [R, r0, dims.hopperHeightM],
+  const roofGeometry = useDisposableGeometry(useMemo(() => new THREE.ConeGeometry(R * 1.01, dims.roofHeightM, 128), [R, dims.roofHeightM]))
+  const hopperGeometry = useDisposableGeometry(
+    useMemo(
+      () => buildCorrugatedCylinderGeometry(R, r0, dims.hopperHeightM, 128, Math.max(24, Math.round(R * 10)), 0.014),
+      [R, r0, dims.hopperHeightM],
+    ),
   )
 
   const legRadius = Math.max(0.025, R * 0.016)
   const legs = useMemo<Leg[]>(() => {
     const clearance = legClearanceM(dims)
     if (clearance <= 0) return []
-    const topY = -dims.hopperHeightM * 0.15
-    const topR = R * 0.82
+    const topY = -dims.hopperHeightM * LEG_TOP_HEIGHT_FRAC
+    const topR = R * LEG_TOP_RADIUS_FRAC
     const groundY = -dims.hopperHeightM - clearance
-    const bottomR = R * 1.3
+    const bottomR = R * LEG_BOTTOM_RADIUS_FRAC
     return Array.from({ length: LEG_COUNT }, (_, i) => {
       const angle = (i / LEG_COUNT) * Math.PI * 2 + Math.PI / LEG_COUNT
       const top = new THREE.Vector3(topR * Math.cos(angle), topY, topR * Math.sin(angle))
@@ -52,7 +71,7 @@ export function SiloModel({ dims }: { dims: SiloDimensions }) {
         quaternion: new THREE.Quaternion().setFromUnitVectors(UP, direction),
         length: top.distanceTo(bottom),
         footPosition: bottom,
-        bracePoint: top.clone().lerp(bottom, 0.55),
+        bracePoint: top.clone().lerp(bottom, LEG_BRACE_FRAC),
       }
     })
   }, [dims, R])

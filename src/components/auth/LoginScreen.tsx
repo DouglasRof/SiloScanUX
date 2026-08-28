@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import logoUrl from '../../assets/inovagrotec-logo.jpg'
+import { TEXT_INPUT_CLASS } from '../../lib/formStyles'
 
-const inputClass =
-  'w-full rounded-lg border border-(--color-line) bg-(--color-panel-soft) px-3 py-2 text-sm text-(--color-ink) outline-none focus:border-(--color-brand)'
+const inputClass = `${TEXT_INPUT_CLASS} px-3 py-2`
 
 export function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -56,10 +57,10 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
           <div className="flex items-center justify-between text-[12px]">
             <label className="flex items-center gap-1.5 text-(--color-ink-soft)">
-              <input type="checkbox" className="accent-(--color-brand)" />
+              <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="accent-(--color-brand)" />
               Lembrar de mim
             </label>
-            <button type="button" className="font-semibold text-(--color-brand)">
+            <button type="button" disabled aria-disabled="true" title="Ainda não disponível" className="cursor-not-allowed font-semibold text-(--color-ink-faint)">
               Esqueceu a senha?
             </button>
           </div>

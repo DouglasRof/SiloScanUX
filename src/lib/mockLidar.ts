@@ -65,8 +65,11 @@ function solveBaseForTargetVolume(
   targetVolumeM3: number,
   opts: Required<GeneratorOptions>,
 ): number {
-  let lo = -dims.hopperHeightM - 1
-  let hi = dims.cylinderHeightM + dims.roofHeightM + 1
+  // Margin scales with amplitude too — a steep angle-of-repose cone/funnel on a large silo
+  // can shift the mean surface height by more than 1m, and a fixed margin could leave the
+  // search unable to bracket 0%/100% (bisection can't go past its own lo/hi bounds).
+  let lo = -dims.hopperHeightM - amplitude - 1
+  let hi = dims.cylinderHeightM + dims.roofHeightM + amplitude + 1
   for (let iter = 0; iter < 22; iter++) {
     const mid = (lo + hi) / 2
     const points = buildPoints(dims, mode, mid, amplitude, { ...opts, noiseM: 0 })

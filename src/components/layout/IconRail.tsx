@@ -41,6 +41,7 @@ export function IconRail({ active, alertCount, onSelect, onOpenSettings, onOpenR
           <button
             key={item.id}
             title={item.label}
+            aria-label={item.badge ? `${item.label} (${item.badge})` : item.label}
             onClick={item.onClick}
             className="relative flex h-11 w-11 items-center justify-center rounded-xl text-(--color-ink-faint) transition-colors hover:bg-(--color-panel-soft) hover:text-(--color-ink-soft)"
           >
@@ -54,8 +55,10 @@ export function IconRail({ active, alertCount, onSelect, onOpenSettings, onOpenR
         ))}
       </div>
       <button
-        title="Ajuda"
-        className="flex h-11 w-11 items-center justify-center rounded-xl text-(--color-ink-faint) hover:bg-(--color-panel-soft) hover:text-(--color-ink-soft)"
+        title="Ajuda (em breve)"
+        aria-disabled="true"
+        disabled
+        className="flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-xl text-(--color-ink-faint) opacity-40"
       >
         <HelpIcon />
       </button>

@@ -23,7 +23,9 @@ export function computeFlowEstimate(
   const shortLog = log.filter((e) => e.t >= shortWindowStart)
   const shortNet = shortLog.reduce((s, e) => s + e.deltaTon, 0)
   const shortHours = shortLog.length > 0 ? (now - shortLog[0].t) / HOUR_MS : 0
-  const netRateTonHour = shortHours > 0.001 ? shortNet / shortHours : inflowLastHourTon - outflowLastHourTon
+  // Require a couple of samples before trusting the short window — right after a reset
+  // (flowLog cleared) one lone sample would extrapolate a noisy, over-confident rate.
+  const netRateTonHour = shortLog.length >= 2 && shortHours > 0.001 ? shortNet / shortHours : inflowLastHourTon - outflowLastHourTon
 
   let hoursToEmpty: number | null = null
   let hoursToFull: number | null = null

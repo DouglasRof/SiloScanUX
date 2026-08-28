@@ -18,6 +18,15 @@ export function legClearanceM(dims: SiloDimensions): number {
   return Math.max(0.5, dims.hopperHeightM * 0.4)
 }
 
+/** Leg silhouette proportions, shared by the 3D model and the 2D elevation cut so neither
+ * can silently drift from the other: where the legs attach (as a fraction of the silo
+ * radius and a fraction *down into* the hopper from the cylinder junction), how far they
+ * splay out at the foot, and where along their length the cross-brace sits. */
+export const LEG_TOP_RADIUS_FRAC = 0.82
+export const LEG_BOTTOM_RADIUS_FRAC = 1.3
+export const LEG_TOP_HEIGHT_FRAC = 0.15
+export const LEG_BRACE_FRAC = 0.55
+
 /** Full hopper volume (cone tapering from silo radius down to the outlet radius). Zero for flat-bottom silos. */
 export function fullHopperVolumeM3(dims: SiloDimensions): number {
   if (dims.hopperType !== 'cone' || dims.hopperHeightM <= 0) return 0
@@ -101,27 +110,36 @@ export function buildHeightGrid(
     }
   }
 
-  // Fill empty cells (gaps in scan coverage) from the nearest populated neighbour, ring-first.
+  // Fill empty cells (gaps in scan coverage) from the nearest populated neighbour. A
+  // multi-source BFS flood-fill from every populated cell reaches each empty cell in
+  // O(rings*sectors) total — the previous per-cell brute-force nearest-neighbour search was
+  // O((rings*sectors)^2), which matters once real (sparsely-covered) sensor data is fed in
+  // rather than the synthetic generator's always-fully-populated grid.
   if (filled < total && filled > 0) {
+    const visited: boolean[][] = Array.from({ length: rings }, () => Array(sectors).fill(false))
+    const queue: number[] = []
     for (let i = 0; i < rings; i++) {
       for (let j = 0; j < sectors; j++) {
-        if (counts[i][j] > 0) continue
-        let best: number | null = null
-        let bestDist = Infinity
-        for (let di = 0; di < rings; di++) {
-          for (let dj = 0; dj < sectors; dj++) {
-            if (counts[di][dj] === 0) continue
-            const dRing = di - i
-            let dSector = Math.abs(dj - j)
-            dSector = Math.min(dSector, sectors - dSector)
-            const dist = dRing * dRing + dSector * dSector
-            if (dist < bestDist) {
-              bestDist = dist
-              best = values[di][dj]
-            }
-          }
+        if (counts[i][j] > 0) {
+          visited[i][j] = true
+          queue.push(i * sectors + j)
         }
-        if (best !== null) values[i][j] = best
+      }
+    }
+    for (let head = 0; head < queue.length; head++) {
+      const i = Math.floor(queue[head] / sectors)
+      const j = queue[head] % sectors
+      const neighbours: [number, number][] = [
+        [i - 1, j],
+        [i + 1, j],
+        [i, (j + 1) % sectors],
+        [i, (j - 1 + sectors) % sectors],
+      ]
+      for (const [ni, nj] of neighbours) {
+        if (ni < 0 || ni >= rings || visited[ni][nj]) continue
+        visited[ni][nj] = true
+        values[ni][nj] = values[i][j]
+        queue.push(ni * sectors + nj)
       }
     }
   }

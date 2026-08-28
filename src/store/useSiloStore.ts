@@ -11,7 +11,7 @@ import type {
 } from '../types/silo'
 import { CUSTOM_SILO_ID, STANDARD_SILOS } from '../data/standardSilos'
 import { GRAIN_PROFILES } from '../data/grainProfiles'
-import { computeVolumeFromScan, rawPointToHeight, totalCapacityM3 } from '../lib/volume'
+import { computeVolumeFromScan, rawPointToHeight } from '../lib/volume'
 import { generateSyntheticScan, type FillMode } from '../lib/mockLidar'
 import { computeFlowEstimate, type FlowLogEntry } from '../lib/flow'
 import type { FlowEstimate } from '../types/silo'
@@ -149,9 +149,17 @@ export const useSiloStore = create<SiloState>((set, get) => ({
   setGrainProfile: (id) => {
     const grain = GRAIN_PROFILES.find((g) => g.id === id)
     if (!grain) return
-    const { dims, scan } = get()
+    const { dims, scan, history, temperatureC } = get()
     const volume = computeVolumeFromScan(dims, scan.points, grain.bulkDensityKgM3)
-    set({ grain, volume, status: levelStatusFor(volume.levelPercent) })
+    const status = levelStatusFor(volume.levelPercent)
+    const now = Date.now()
+    // Mass jumps with the new bulk density even though nothing physically moved — rebase the
+    // last history point and drop flowLog so the next tick doesn't read that as a real
+    // fill/drain event (which spiked netRateTonHour and could fire a bogus refill alert).
+    const rebasedLast: HistorySample = { t: now, levelPercent: volume.levelPercent, volumeM3: volume.volumeM3, massTon: volume.massTon, temperatureC }
+    const rebasedHistory = history.length > 0 ? [...history.slice(0, -1), rebasedLast] : [rebasedLast]
+    const flow = computeFlowEstimate([], volume.massTon, volume.totalCapacityTon, now)
+    set({ grain, volume, status, flowLog: [], flow, history: rebasedHistory, alerts: buildAlerts(volume, status, temperatureC, flow) })
   },
 
   setMode: (mode) => set({ mode }),
@@ -228,7 +236,3 @@ export const useSiloStore = create<SiloState>((set, get) => ({
     set({ temperatureC: nextTemp })
   },
 }))
-
-export function totalCapacityLabelM3(dims: SiloDimensions): number {
-  return Math.round(totalCapacityM3(dims))
-}

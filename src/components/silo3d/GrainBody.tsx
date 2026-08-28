@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { Line } from '@react-three/drei'
 import type { SiloDimensions, VolumeResult } from '../../types/silo'
@@ -11,6 +11,12 @@ const SPOKE_CONTOURS = 10
 
 export function GrainBody({ dims, volume }: { dims: SiloDimensions; volume: VolumeResult }) {
   const geometry = useMemo(() => buildGrainGeometry(dims, volume.heightGrid), [dims, volume.heightGrid])
+
+  // This rebuilds on every tick (~2.2s, following volume.heightGrid), so leaving the
+  // previous BufferGeometry's GPU buffers undisposed would leak steadily for as long as the
+  // dashboard stays open — geometry passed through the `geometry` prop isn't auto-disposed
+  // by R3F the way a JSX <bufferGeometry> child would be.
+  useEffect(() => () => geometry.dispose(), [geometry])
 
   const ringPoints = useMemo(() => {
     const R = dims.diameterM / 2 + 0.03
