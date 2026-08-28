@@ -42,20 +42,20 @@ export function Annotations({ dims, volume }: { dims: SiloDimensions; volume: Vo
       <DashedLine points={heightLinePoints} />
       <DashedLine points={tickTop} />
       <DashedLine points={tickBottom} />
-      <Html position={[offsetX, (baseY + topY) / 2, 0]} center distanceFactor={12} className="pointer-events-none select-none">
+      <Html position={[offsetX, (baseY + topY) / 2, 0]} center distanceFactor={12} zIndexRange={[1, 0]} className="pointer-events-none select-none">
         <div className="whitespace-nowrap rounded-md bg-white/90 px-2 py-0.5 text-[11px] font-semibold text-slate-600 shadow-sm">
           {totalHeight.toFixed(1)} m
         </div>
       </Html>
 
       <DashedLine points={diameterPoints} color="#5b8fb5" />
-      <Html position={[0, baseY - 0.4, 0]} center distanceFactor={12} className="pointer-events-none select-none">
+      <Html position={[0, baseY - 0.4, 0]} center distanceFactor={12} zIndexRange={[1, 0]} className="pointer-events-none select-none">
         <div className="whitespace-nowrap rounded-md bg-white/90 px-2 py-0.5 text-[11px] font-semibold text-slate-600 shadow-sm">
           ⌀ {dims.diameterM.toFixed(1)} m
         </div>
       </Html>
 
-      <Html position={pillPos} center distanceFactor={10} className="pointer-events-none select-none">
+      <Html position={pillPos} center distanceFactor={10} zIndexRange={[1, 0]} className="pointer-events-none select-none">
         <div className="whitespace-nowrap rounded-full bg-slate-800/85 px-3 py-1 text-[13px] font-bold text-white shadow-lg">
           {levelPercent.toFixed(0)}%
         </div>
