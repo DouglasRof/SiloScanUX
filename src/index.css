@@ -1,0 +1,68 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+  --color-app-from: #cfe8f7;
+  --color-app-to: #eef7fc;
+  --color-panel: #ffffff;
+  --color-panel-soft: #f6fafd;
+  --color-ink: #16232d;
+  --color-ink-soft: #5c6f7c;
+  --color-ink-faint: #93a3ad;
+  --color-line: #e3ecf2;
+
+  --color-brand: #2f7bc4;
+  --color-brand-dark: #1f5a94;
+  --color-brand-soft: #e8f2fb;
+
+  --color-good: #1f9d5c;
+  --color-good-soft: #e2f7ea;
+  --color-warn: #d98a1c;
+  --color-warn-soft: #fdf1de;
+  --color-danger: #d5504f;
+  --color-danger-soft: #fbe6e5;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-panel-soft);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-dark);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll-slim::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: #cfdce4;
+  border-radius: 999px;
+}
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
