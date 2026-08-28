@@ -107,12 +107,12 @@ function freshState(dims: SiloDimensions, grain: GrainProfile, levelPercent: num
   return { scan, volume, status, flow, history }
 }
 
-const initialDims = STANDARD_SILOS[4]
-const initialGrain = GRAIN_PROFILES[0]
+const initialDims = STANDARD_SILOS[3]
+const initialGrain = GRAIN_PROFILES.find((g) => g.id === 'racao') ?? GRAIN_PROFILES[0]
 const initial = freshState(initialDims, initialGrain, 68)
 
 export const useSiloStore = create<SiloState>((set, get) => ({
-  siloName: 'SILO 03',
+  siloName: 'SILO ALIMENTADOR 01',
   standardId: initialDims.id,
   dims: initialDims,
   grain: initialGrain,

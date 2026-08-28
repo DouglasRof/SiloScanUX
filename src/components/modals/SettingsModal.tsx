@@ -18,6 +18,8 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 const inputClass =
   'w-full rounded-lg border border-(--color-line) bg-(--color-panel-soft) px-2.5 py-1.5 text-sm text-(--color-ink) outline-none focus:border-(--color-brand)'
 
+const siloLines = [...new Set(STANDARD_SILOS.map((s) => s.line))]
+
 export function SettingsModal({ onClose }: { onClose: () => void }) {
   const siloName = useSiloStore((s) => s.siloName)
   const standardId = useSiloStore((s) => s.standardId)
@@ -73,10 +75,14 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             value={standardId}
             onChange={(e) => setStandardSilo(e.target.value)}
           >
-            {STANDARD_SILOS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} — Ø{s.diameterM}m × {s.cylinderHeightM}m ({Math.round(s.nominalCapacityM3)} m³)
-              </option>
+            {siloLines.map((line) => (
+              <optgroup key={line} label={line}>
+                {STANDARD_SILOS.filter((s) => s.line === line).map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} — Ø{s.diameterM}m × {s.cylinderHeightM}m ({Math.round(s.nominalCapacityM3)} m³)
+                  </option>
+                ))}
+              </optgroup>
             ))}
             <option value={CUSTOM_SILO_ID}>Personalizado…</option>
           </select>
