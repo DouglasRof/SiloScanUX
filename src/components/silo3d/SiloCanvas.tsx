@@ -1,24 +1,32 @@
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
 import { useSiloStore } from '../../store/useSiloStore'
 import { legClearanceM } from '../../lib/volume'
 import { SiloScene } from './SiloScene'
 
 export function SiloCanvas() {
   const dims = useSiloStore((s) => s.dims)
+  const standardId = useSiloStore((s) => s.standardId)
   const legClearance = legClearanceM(dims)
   const target: [number, number, number] = [0, dims.cylinderHeightM * 0.42 - legClearance * 0.25, 0]
   const camDistance = dims.diameterM * 2.3 + dims.cylinderHeightM * 0.35 + legClearance * 1.4
 
   return (
     <div className="relative h-full w-full bg-linear-to-b from-(--color-app-from) to-(--color-app-to)">
-      <Canvas
-        shadows
-        dpr={[1, 2]}
-        camera={{ position: [camDistance * 0.72, dims.cylinderHeightM * 0.85, camDistance * 0.72], fov: 38, near: 0.1, far: 500 }}
-      >
+      <Canvas shadows dpr={[1, 2]}>
         <Suspense fallback={null}>
+          {/* Keyed on the model, not on `dims` itself, so orbiting/zooming survives fine custom-dimension
+              tweaks but switching to a differently-sized standard model re-frames instead of leaving the
+              camera at whatever distance/target the previous (often very differently scaled) silo had. */}
+          <PerspectiveCamera
+            key={standardId}
+            makeDefault
+            position={[camDistance * 0.72, dims.cylinderHeightM * 0.85, camDistance * 0.72]}
+            fov={38}
+            near={0.1}
+            far={500}
+          />
           <hemisphereLight args={['#eaf5fc', '#8a9aa5', 0.65]} />
           <ambientLight intensity={0.35} />
           <directionalLight
@@ -30,6 +38,7 @@ export function SiloCanvas() {
           <directionalLight position={[-dims.diameterM * 2, dims.cylinderHeightM, -dims.diameterM]} intensity={0.35} />
           <SiloScene />
           <OrbitControls
+            key={standardId}
             target={target}
             enableDamping
             dampingFactor={0.08}
