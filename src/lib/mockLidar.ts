@@ -6,9 +6,10 @@ export type FillMode = 'filling' | 'draining' | 'idle'
 const DEG = Math.PI / 180
 
 function shapeAt(rNorm: number, mode: FillMode): number {
-  if (mode === 'filling') return 1 - rNorm
   if (mode === 'draining') return -(1 - rNorm)
-  return 0
+  // Filling and idle both settle into a central heap at the angle of repose —
+  // idle is simply the resting version of that pile, not a flat plane.
+  return 1 - rNorm
 }
 
 interface GeneratorOptions {
@@ -100,7 +101,7 @@ export function generateSyntheticScan(
       ? R * Math.tan(grain.angleOfReposeDeg * DEG) * 0.55
       : mode === 'draining'
         ? dims.hopperHeightM * 0.45
-        : R * 0.03
+        : R * Math.tan(grain.angleOfReposeDeg * DEG) * 0.3
 
   const base = solveBaseForTargetVolume(dims, mode, amplitude, grain.bulkDensityKgM3, targetVolumeM3, opts)
   const points = buildPoints(dims, mode, base, amplitude, opts)

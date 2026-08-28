@@ -72,10 +72,16 @@ export function buildGrainGeometry(dims: SiloDimensions, grid: HeightGrid): THRE
     }
   }
 
+  // Pull the grain skirt/hopper in from the physical wall radius so it never sits flush
+  // against the corrugated metal wall — coincident opaque surfaces z-fight, which read as
+  // the wall's ridges flickering through the grain as radial stripes.
+  const WALL_CLEARANCE_M = 0.03
+
   const R = dims.diameterM / 2
+  const skirtR = Math.max(R - WALL_CLEARANCE_M, R * 0.92)
   const skirtBase = positions.length / 3
   for (let col = 0; col < sectors; col++) {
-    positions.push(...polar(R, grid.sectorAngles[col], 0))
+    positions.push(...polar(skirtR, grid.sectorAngles[col], 0))
     colors.push(...flat)
   }
   for (let col = 0; col < sectors; col++) {
@@ -89,9 +95,10 @@ export function buildGrainGeometry(dims: SiloDimensions, grid: HeightGrid): THRE
 
   if (dims.hopperType === 'cone' && dims.hopperHeightM > 0) {
     const r0 = hopperOutletRadius(dims)
+    const hopperR0 = Math.max(r0 - WALL_CLEARANCE_M, r0 * 0.7)
     const hopperBase = positions.length / 3
     for (let col = 0; col < sectors; col++) {
-      positions.push(...polar(r0, grid.sectorAngles[col], -dims.hopperHeightM))
+      positions.push(...polar(hopperR0, grid.sectorAngles[col], -dims.hopperHeightM))
       colors.push(...flat)
     }
     for (let col = 0; col < sectors; col++) {
