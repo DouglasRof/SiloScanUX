@@ -10,6 +10,14 @@ export function hopperOutletRadius(dims: SiloDimensions): number {
   return dims.hopperType === 'cone' ? dims.outletDiameterM / 2 : dims.diameterM / 2
 }
 
+/** Ground clearance under the outlet for the support legs — cone-bottom silos only; a
+ * flat-bottom silo sits directly on its pad. Shared by the 3D scene and the 2D elevation
+ * so both draw legs of the same length and the same "floor" line. */
+export function legClearanceM(dims: SiloDimensions): number {
+  if (dims.hopperType !== 'cone' || dims.hopperHeightM <= 0) return 0
+  return Math.max(0.5, dims.hopperHeightM * 0.4)
+}
+
 /** Full hopper volume (cone tapering from silo radius down to the outlet radius). Zero for flat-bottom silos. */
 export function fullHopperVolumeM3(dims: SiloDimensions): number {
   if (dims.hopperType !== 'cone' || dims.hopperHeightM <= 0) return 0

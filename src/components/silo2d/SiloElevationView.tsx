@@ -1,17 +1,21 @@
 import type { SiloDimensions, VolumeResult } from '../../types/silo'
 import { profileAt, radialProfile } from '../../lib/topography'
-import { hopperOutletRadius } from '../../lib/volume'
+import { hopperOutletRadius, legClearanceM } from '../../lib/volume'
 
 const PAD = 34
 const CONTENT_H = 260
 const PROFILE_SAMPLES = 40
+const LEG_TOP_FRAC = 0.82
+const LEG_BOTTOM_FRAC = 1.3
 
 export function SiloElevationView({ dims, volume }: { dims: SiloDimensions; volume: VolumeResult }) {
+  const legClearance = legClearanceM(dims)
   const totalHeight = dims.hopperHeightM + dims.cylinderHeightM + dims.roofHeightM
-  const pxPerM = CONTENT_H / Math.max(totalHeight, 0.1)
+  const pxPerM = CONTENT_H / Math.max(totalHeight + legClearance, 0.1)
   const R = dims.diameterM / 2
   const halfD = R * pxPerM
-  const width = halfD * 2 + PAD * 2
+  const legBottomHalf = legClearance > 0 ? R * LEG_BOTTOM_FRAC * pxPerM : halfD
+  const width = Math.max(halfD, legBottomHalf) * 2 + PAD * 2
   const height = CONTENT_H + PAD * 2
   const cx = width / 2
 
@@ -22,6 +26,11 @@ export function SiloElevationView({ dims, volume }: { dims: SiloDimensions; volu
   const r0 = hopperOutletRadius(dims)
   const outletHalf = r0 * pxPerM
   const maxHeight = dims.cylinderHeightM + Math.max(dims.roofHeightM, 0)
+
+  const groundY = yHopperBottom + legClearance * pxPerM
+  const legTopHalf = R * LEG_TOP_FRAC * pxPerM
+  const legTopY = yCylBottom + dims.hopperHeightM * 0.15 * pxPerM
+  const braceY = legTopY + (groundY - legTopY) * 0.55
 
   const heightToY = (hM: number) => yCylBottom - hM * pxPerM
 
@@ -102,6 +111,23 @@ export function SiloElevationView({ dims, volume }: { dims: SiloDimensions; volu
       </g>
 
       <path d={outline} fill="none" stroke="var(--color-ink-soft)" strokeWidth={2} strokeLinejoin="round" />
+
+      {legClearance > 0 && (
+        <g stroke="var(--color-ink-faint)" strokeWidth={2} strokeLinecap="round" fill="none">
+          <line x1={cx - legTopHalf} y1={legTopY} x2={cx - legBottomHalf} y2={groundY} />
+          <line x1={cx + legTopHalf} y1={legTopY} x2={cx + legBottomHalf} y2={groundY} />
+          <line
+            x1={cx - legTopHalf - (legTopHalf - legBottomHalf) * 0.45}
+            y1={braceY}
+            x2={cx + legTopHalf + (legTopHalf - legBottomHalf) * 0.45}
+            y2={braceY}
+            strokeWidth={1.2}
+            opacity={0.7}
+          />
+          <line x1={cx - legBottomHalf - 9} y1={groundY} x2={cx - legBottomHalf + 9} y2={groundY} strokeWidth={3} />
+          <line x1={cx + legBottomHalf - 9} y1={groundY} x2={cx + legBottomHalf + 9} y2={groundY} strokeWidth={3} />
+        </g>
+      )}
 
       <line
         x1={cx - halfD - 10}

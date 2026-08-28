@@ -44,11 +44,11 @@ interface GlassWallMaterialProps {
  * (grazing-angle faces) stays opaque enough to read as a silo wall.
  */
 export function GlassWallMaterial({
-  color = '#c7cdd3',
+  color = '#b7c1c9',
   rimColor = '#eef3f7',
-  minOpacity = 0.12,
-  maxOpacity = 0.82,
-  power = 1.6,
+  minOpacity = 0.22,
+  maxOpacity = 0.85,
+  power = 1.1,
 }: GlassWallMaterialProps) {
   const uniforms = useMemo(
     () => ({

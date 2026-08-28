@@ -2,12 +2,14 @@ import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { useSiloStore } from '../../store/useSiloStore'
+import { legClearanceM } from '../../lib/volume'
 import { SiloScene } from './SiloScene'
 
 export function SiloCanvas() {
   const dims = useSiloStore((s) => s.dims)
-  const target: [number, number, number] = [0, dims.cylinderHeightM * 0.45, 0]
-  const camDistance = dims.diameterM * 2.3 + dims.cylinderHeightM * 0.35
+  const legClearance = legClearanceM(dims)
+  const target: [number, number, number] = [0, dims.cylinderHeightM * 0.42 - legClearance * 0.25, 0]
+  const camDistance = dims.diameterM * 2.3 + dims.cylinderHeightM * 0.35 + legClearance * 1.4
 
   return (
     <div className="relative h-full w-full bg-linear-to-b from-(--color-app-from) to-(--color-app-to)">

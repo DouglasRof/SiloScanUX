@@ -1,11 +1,22 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
+import { Line } from '@react-three/drei'
 import type { SiloDimensions } from '../../types/silo'
 import { buildCorrugatedCylinderGeometry } from '../../lib/corrugated'
-import { hopperOutletRadius } from '../../lib/volume'
+import { hopperOutletRadius, legClearanceM } from '../../lib/volume'
 import { GlassWallMaterial } from './GlassWallMaterial'
 
 const PIPE_ANGLE = (3 * Math.PI) / 4
+const LEG_COUNT = 4
+const UP = new THREE.Vector3(0, 1, 0)
+
+interface Leg {
+  position: THREE.Vector3
+  quaternion: THREE.Quaternion
+  length: number
+  footPosition: THREE.Vector3
+  bracePoint: THREE.Vector3
+}
 
 export function SiloModel({ dims }: { dims: SiloDimensions }) {
   const R = dims.diameterM / 2
@@ -21,6 +32,30 @@ export function SiloModel({ dims }: { dims: SiloDimensions }) {
     () => buildCorrugatedCylinderGeometry(R, r0, dims.hopperHeightM, 128, Math.max(24, Math.round(R * 10)), 0.014),
     [R, r0, dims.hopperHeightM],
   )
+
+  const legRadius = Math.max(0.025, R * 0.016)
+  const legs = useMemo<Leg[]>(() => {
+    const clearance = legClearanceM(dims)
+    if (clearance <= 0) return []
+    const topY = -dims.hopperHeightM * 0.15
+    const topR = R * 0.82
+    const groundY = -dims.hopperHeightM - clearance
+    const bottomR = R * 1.3
+    return Array.from({ length: LEG_COUNT }, (_, i) => {
+      const angle = (i / LEG_COUNT) * Math.PI * 2 + Math.PI / LEG_COUNT
+      const top = new THREE.Vector3(topR * Math.cos(angle), topY, topR * Math.sin(angle))
+      const bottom = new THREE.Vector3(bottomR * Math.cos(angle), groundY, bottomR * Math.sin(angle))
+      const position = top.clone().add(bottom).multiplyScalar(0.5)
+      const direction = bottom.clone().sub(top).normalize()
+      return {
+        position,
+        quaternion: new THREE.Quaternion().setFromUnitVectors(UP, direction),
+        length: top.distanceTo(bottom),
+        footPosition: bottom,
+        bracePoint: top.clone().lerp(bottom, 0.55),
+      }
+    })
+  }, [dims, R])
 
   return (
     <group>
@@ -58,6 +93,28 @@ export function SiloModel({ dims }: { dims: SiloDimensions }) {
         <cylinderGeometry args={[r0 * 1.15, r0 * 1.15, 0.1, 24]} />
         <meshStandardMaterial color="#6b7580" metalness={0.6} roughness={0.5} />
       </mesh>
+
+      {legs.map((leg, i) => (
+        <group key={i}>
+          <mesh position={leg.position} quaternion={leg.quaternion} castShadow>
+            <cylinderGeometry args={[legRadius, legRadius, leg.length, 10]} />
+            <meshStandardMaterial color="#6b7580" metalness={0.7} roughness={0.45} />
+          </mesh>
+          <mesh position={leg.footPosition} castShadow>
+            <cylinderGeometry args={[legRadius * 2.8, legRadius * 3.2, legRadius * 1.6, 12]} />
+            <meshStandardMaterial color="#565f68" metalness={0.6} roughness={0.5} />
+          </mesh>
+        </group>
+      ))}
+      {legs.length > 1 &&
+        legs.map((leg, i) => (
+          <Line
+            key={`brace-${i}`}
+            points={[leg.bracePoint, legs[(i + 1) % legs.length].bracePoint]}
+            color="#6b7580"
+            lineWidth={1.4}
+          />
+        ))}
     </group>
   )
 }
