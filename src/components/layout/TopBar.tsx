@@ -13,7 +13,7 @@ export function TopBar({ siloName, theme, onToggleTheme }: TopBarProps) {
       <div className="flex items-center gap-2.5">
         <SiloLogo />
         <span className="text-[15px] font-bold tracking-tight text-(--color-ink)">SiloScanUX</span>
-        <span className="rounded-full bg-(--color-brand-soft) px-2 py-0.5 text-[11px] font-semibold text-(--color-brand-dark)">v2.1</span>
+        <span className="rounded-full bg-(--color-brand-soft) px-2 py-0.5 text-[11px] font-semibold text-(--color-brand-dark)">v{__APP_VERSION__}</span>
       </div>
 
       <h1 className="absolute left-1/2 -translate-x-1/2 text-[13px] font-bold tracking-[0.14em] text-(--color-ink-soft)">
