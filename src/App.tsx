@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { LoginScreen } from './components/auth/LoginScreen'
 import { IconRail } from './components/layout/IconRail'
 import { TopBar } from './components/layout/TopBar'
 import { LeftPanel } from './components/layout/LeftPanel'
@@ -14,6 +15,7 @@ import { useTheme } from './hooks/useTheme'
 type ModalKind = 'settings' | 'alerts' | 'reports' | null
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [activeRail, setActiveRail] = useState('dashboard')
   const [modal, setModal] = useState<ModalKind>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('3d')
@@ -27,6 +29,10 @@ export default function App() {
     const interval = setInterval(() => tick(), 2200)
     return () => clearInterval(interval)
   }, [tick])
+
+  if (!isLoggedIn) {
+    return <LoginScreen onLogin={() => setIsLoggedIn(true)} />
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-(--color-panel)">
