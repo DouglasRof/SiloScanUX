@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { IconRail } from './components/layout/IconRail'
 import { TopBar } from './components/layout/TopBar'
 import { LeftPanel } from './components/layout/LeftPanel'
+import { ViewModeToggle, type ViewMode } from './components/layout/ViewModeToggle'
 import { SiloCanvas } from './components/silo3d/SiloCanvas'
+import { Silo2DView } from './components/silo2d/Silo2DView'
 import { SettingsModal } from './components/modals/SettingsModal'
 import { AlertsPanel } from './components/modals/AlertsPanel'
 import { ReportsModal } from './components/modals/ReportsModal'
@@ -14,6 +16,7 @@ type ModalKind = 'settings' | 'alerts' | 'reports' | null
 export default function App() {
   const [activeRail, setActiveRail] = useState('dashboard')
   const [modal, setModal] = useState<ModalKind>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('3d')
   const { theme, toggleTheme } = useTheme()
 
   const tick = useSiloStore((s) => s.tick)
@@ -41,8 +44,9 @@ export default function App() {
 
         <div className="flex min-h-0 flex-1">
           <LeftPanel />
-          <main className="min-w-0 flex-1">
-            <SiloCanvas />
+          <main className="relative min-w-0 flex-1">
+            {viewMode === '3d' ? <SiloCanvas /> : <Silo2DView />}
+            <ViewModeToggle mode={viewMode} onChange={setViewMode} />
           </main>
         </div>
       </div>
