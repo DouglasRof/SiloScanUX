@@ -5,9 +5,10 @@ interface TopBarProps {
   siloName: string
   theme: Theme
   onToggleTheme: () => void
+  onLogout: () => void
 }
 
-export function TopBar({ siloName, theme, onToggleTheme }: TopBarProps) {
+export function TopBar({ siloName, theme, onToggleTheme, onLogout }: TopBarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-(--color-line) bg-(--color-panel) px-5">
       <div className="flex items-center gap-2.5">
@@ -28,7 +29,7 @@ export function TopBar({ siloName, theme, onToggleTheme }: TopBarProps) {
         >
           {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
         </button>
-        <button className="flex h-9 w-9 items-center justify-center rounded-lg text-(--color-ink-soft) hover:bg-(--color-panel-soft)" title="Sair">
+        <button onClick={onLogout} className="flex h-9 w-9 items-center justify-center rounded-lg text-(--color-ink-soft) hover:bg-(--color-panel-soft)" title="Sair">
           <LogoutIcon />
         </button>
       </div>

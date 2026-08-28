@@ -46,7 +46,7 @@ export default function App() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar siloName={siloName} theme={theme} onToggleTheme={toggleTheme} />
+        <TopBar siloName={siloName} theme={theme} onToggleTheme={toggleTheme} onLogout={() => setIsLoggedIn(false)} />
 
         <div className="flex min-h-0 flex-1">
           <LeftPanel />
