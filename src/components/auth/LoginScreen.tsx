@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { BrandIcon, BrandWordmark } from '../brand/BrandMark'
+import logoUrl from '../../assets/inovagrotec-logo.jpg'
 
 const inputClass =
   'w-full rounded-lg border border-(--color-line) bg-(--color-panel-soft) px-3 py-2 text-sm text-(--color-ink) outline-none focus:border-(--color-brand)'
@@ -18,8 +18,14 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
     <div className="flex h-screen w-screen items-center justify-center bg-linear-to-b from-(--color-app-from) to-(--color-app-to) p-4">
       <div className="w-full max-w-[380px] rounded-2xl border border-(--color-line) bg-(--color-panel) p-8 shadow-[0_8px_30px_rgba(16,40,60,0.16)]">
         <div className="flex flex-col items-center gap-2">
-          <BrandIcon className="h-16 w-16" />
-          <BrandWordmark className="text-lg" />
+          {/* Zoomed slightly past 100% to crop the stray 1-2px border on the source file's
+              right/bottom edges (a leftover from however the original was captured). */}
+          <div
+            role="img"
+            aria-label="InovAgroTec"
+            className="h-24 w-24 rounded-xl"
+            style={{ backgroundImage: `url(${logoUrl})`, backgroundSize: '106% 106%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+          />
           <p className="text-center text-[13px] text-(--color-ink-faint)">Monitoramento inteligente de silos</p>
         </div>
 
