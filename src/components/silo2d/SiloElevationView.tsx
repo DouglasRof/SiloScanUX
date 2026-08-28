@@ -2,8 +2,7 @@ import type { SiloDimensions, VolumeResult } from '../../types/silo'
 import { profileAt, radialProfile } from '../../lib/topography'
 import { hopperOutletRadius } from '../../lib/volume'
 
-const GRAIN_COLOR = '#c9a15f'
-const PAD = 30
+const PAD = 34
 const CONTENT_H = 260
 const PROFILE_SAMPLES = 40
 
@@ -26,6 +25,7 @@ export function SiloElevationView({ dims, volume }: { dims: SiloDimensions; volu
 
   const heightToY = (hM: number) => yCylBottom - hM * pxPerM
 
+  const roofPath = [`M ${cx} ${yTop}`, `L ${cx + halfD} ${yRoofBase}`, `L ${cx - halfD} ${yRoofBase}`, 'Z'].join(' ')
   const outline = [
     `M ${cx} ${yTop}`,
     `L ${cx + halfD} ${yRoofBase}`,
@@ -85,21 +85,43 @@ export function SiloElevationView({ dims, volume }: { dims: SiloDimensions; volu
         <clipPath id="elevClip">
           <path d={outline} />
         </clipPath>
+        <linearGradient id="elevGrainGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#e0c084" />
+          <stop offset="100%" stopColor="#a3792f" />
+        </linearGradient>
+        <linearGradient id="elevAirGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--color-app-from)" />
+          <stop offset="100%" stopColor="var(--color-app-to)" />
+        </linearGradient>
       </defs>
-      <g clipPath="url(#elevClip)">{fillPath && <path d={fillPath} fill={GRAIN_COLOR} />}</g>
-      <path d={outline} fill="none" stroke="var(--color-ink-soft)" strokeWidth={1.6} strokeLinejoin="round" />
+
+      <g clipPath="url(#elevClip)">
+        <rect x={0} y={0} width={width} height={height} fill="url(#elevAirGrad)" />
+        <path d={roofPath} fill="#aeb6bd" opacity={0.55} />
+        {fillPath && <path d={fillPath} fill="url(#elevGrainGrad)" />}
+      </g>
+
+      <path d={outline} fill="none" stroke="var(--color-ink-soft)" strokeWidth={2} strokeLinejoin="round" />
+
       <line
-        x1={cx - halfD - 8}
+        x1={cx - halfD - 10}
         y1={levelY}
-        x2={cx + halfD + 8}
+        x2={cx + halfD + 10}
         y2={levelY}
-        stroke="#5fd4e8"
+        stroke="#2fb8d4"
         strokeWidth={1.4}
         strokeDasharray="4 3"
-        opacity={0.85}
+        opacity={0.9}
       />
-      <text x={cx} y={levelY - 6} textAnchor="middle" fontSize={11} fontWeight={700} fill="var(--color-ink)">
-        {levelPercent.toFixed(0)}%
+      <g transform={`translate(${cx}, ${levelY})`}>
+        <rect x={-20} y={-20} width={40} height={17} rx={8.5} fill="#1e2a33" opacity={0.88} />
+        <text x={0} y={-8} textAnchor="middle" fontSize={11} fontWeight={700} fill="#ffffff">
+          {levelPercent.toFixed(0)}%
+        </text>
+      </g>
+
+      <text x={cx} y={height - 6} textAnchor="middle" fontSize={10} fontWeight={600} fill="var(--color-ink-faint)">
+        ⌀ {dims.diameterM.toFixed(1)} m · {totalHeight.toFixed(1)} m
       </text>
     </svg>
   )

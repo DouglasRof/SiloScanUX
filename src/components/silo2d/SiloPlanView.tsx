@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { SiloDimensions, VolumeResult } from '../../types/silo'
-import { heightRange, heightToColor } from '../../lib/topography'
+import { elevationGradientCss, heightRange, heightToColor } from '../../lib/topography'
 
 const DISPLAY_RINGS = 20
 const DISPLAY_SECTORS = 48
@@ -32,7 +32,7 @@ export function SiloPlanView({ dims, volume }: { dims: SiloDimensions; volume: V
   const R = dims.diameterM / 2
   const pxPerM = (CENTER - 14) / R
 
-  const cells = useMemo(() => {
+  const { cells, min, max } = useMemo(() => {
     const { min, max } = heightRange(grid)
     const out: { d: string; color: string }[] = []
     for (let i = 0; i < DISPLAY_RINGS; i++) {
@@ -47,27 +47,41 @@ export function SiloPlanView({ dims, volume }: { dims: SiloDimensions; volume: V
         out.push({ d: annularSectorPath(CENTER, CENTER, r0, r1, a0, a1), color: heightToColor(height, min, max) })
       }
     }
-    return out
+    return { cells: out, min, max }
   }, [grid, R, pxPerM])
 
   const outletR = dims.hopperType === 'cone' ? (dims.outletDiameterM / 2) * pxPerM : 0
   const outerR = R * pxPerM
+  const reliefRangeCm = Math.max(0, (max - min) * 100)
 
   return (
-    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full">
-      <defs>
-        <clipPath id="planClip">
-          <circle cx={CENTER} cy={CENTER} r={outerR} />
-        </clipPath>
-      </defs>
-      <g clipPath="url(#planClip)">
-        {cells.map((c, i) => (
-          <path key={i} d={c.d} fill={c.color} stroke={c.color} strokeWidth={0.6} />
-        ))}
-      </g>
-      <circle cx={CENTER} cy={CENTER} r={outerR} fill="none" stroke="var(--color-ink-soft)" strokeWidth={1.6} />
-      {outletR > 0 && <circle cx={CENTER} cy={CENTER} r={outletR} fill="none" stroke="var(--color-panel)" strokeWidth={1.2} strokeDasharray="2 2" opacity={0.7} />}
-      <circle cx={CENTER} cy={CENTER} r={1.6} fill="var(--color-ink-soft)" />
-    </svg>
+    <div className="flex w-full flex-col items-center gap-3">
+      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full">
+        <defs>
+          <clipPath id="planClip">
+            <circle cx={CENTER} cy={CENTER} r={outerR} />
+          </clipPath>
+        </defs>
+        <g clipPath="url(#planClip)">
+          {cells.map((c, i) => (
+            <path key={i} d={c.d} fill={c.color} stroke={c.color} strokeWidth={0.6} />
+          ))}
+        </g>
+        <circle cx={CENTER} cy={CENTER} r={outerR} fill="none" stroke="var(--color-ink-soft)" strokeWidth={1.6} />
+        {outletR > 0 && (
+          <circle cx={CENTER} cy={CENTER} r={outletR} fill="none" stroke="var(--color-panel)" strokeWidth={1.2} strokeDasharray="2 2" opacity={0.7} />
+        )}
+        <circle cx={CENTER} cy={CENTER} r={1.6} fill="var(--color-ink-soft)" />
+      </svg>
+
+      <div className="flex w-full max-w-[220px] flex-col gap-1">
+        <p className="text-center text-[10px] font-bold tracking-wide text-(--color-ink-faint)">RELEVO DA SUPERFÍCIE (Δ {reliefRangeCm.toFixed(1)} cm)</p>
+        <div className="h-2.5 w-full rounded-full" style={{ background: elevationGradientCss() }} />
+        <div className="flex justify-between text-[10px] font-semibold text-(--color-ink-faint)">
+          <span>baixo · {min.toFixed(2)} m</span>
+          <span>alto · {max.toFixed(2)} m</span>
+        </div>
+      </div>
+    </div>
   )
 }
