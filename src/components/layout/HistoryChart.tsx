@@ -3,13 +3,15 @@ import type { HistorySample } from '../../types/silo'
 
 interface HistoryChartProps {
   history: HistorySample[]
+  windowMs?: number
   width?: number
   height?: number
 }
 
-export function HistoryChart({ history, width = 260, height = 56 }: HistoryChartProps) {
+export function HistoryChart({ history, windowMs = 24 * 3_600_000, width = 260, height = 56 }: HistoryChartProps) {
   const { path, areaPath, lastPoint } = useMemo(() => {
-    const windowStart = Date.now() - 24 * 3_600_000
+    const newestT = history.length > 0 ? history[history.length - 1].t : Date.now()
+    const windowStart = newestT - windowMs
     const samples = history.filter((h) => h.t >= windowStart)
     const data = samples.length >= 2 ? samples : history.slice(-2)
     if (data.length < 2) return { path: '', areaPath: '', lastPoint: null }
@@ -28,7 +30,7 @@ export function HistoryChart({ history, width = 260, height = 56 }: HistoryChart
     const line = pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ')
     const area = `${line} L ${pts[pts.length - 1][0].toFixed(1)} ${height} L ${pts[0][0].toFixed(1)} ${height} Z`
     return { path: line, areaPath: area, lastPoint: pts[pts.length - 1] }
-  }, [history, width, height])
+  }, [history, windowMs, width, height])
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="h-14 w-full overflow-visible">

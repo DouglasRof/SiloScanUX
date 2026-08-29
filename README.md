@@ -21,6 +21,7 @@ e alertas. Desenvolvido para a InovAgroTec.
 4. No **SQL Editor** do painel Supabase, rode nesta ordem:
    - `supabase/schema.sql`
    - `supabase/ingest_scan.sql`
+   - `supabase/historico_niveis.sql`
 5. Crie seu primeiro usuário em **Authentication → Users** (marque *Auto Confirm User*).
 6. `npm run dev`
 

@@ -12,10 +12,11 @@ import { Silo2DView } from './components/silo2d/Silo2DView'
 import { SettingsModal } from './components/modals/SettingsModal'
 import { AlertsPanel } from './components/modals/AlertsPanel'
 import { ReportsModal } from './components/modals/ReportsModal'
+import { HistoryModal } from './components/modals/HistoryModal'
 import { useSiloStore } from './store/useSiloStore'
 import { useTheme } from './hooks/useTheme'
 
-type ModalKind = 'settings' | 'alerts' | 'reports' | null
+type ModalKind = 'settings' | 'create-silo' | 'alerts' | 'reports' | 'history' | null
 
 function Silo3DErrorFallback({ onRetry, onSwitchTo2D }: { onRetry: () => void; onSwitchTo2D: () => void }) {
   return (
@@ -49,8 +50,11 @@ export default function App() {
   const { theme, toggleTheme } = useTheme()
 
   const tick = useSiloStore((s) => s.tick)
-  const siloName = useSiloStore((s) => s.siloName)
   const alerts = useSiloStore((s) => s.alerts)
+  const silos = useSiloStore((s) => s.silos)
+  const activeSiloId = useSiloStore((s) => s.siloId)
+  const switchToSilo = useSiloStore((s) => s.switchToSilo)
+  const deleteSilo = useSiloStore((s) => s.deleteSilo)
 
   useEffect(() => {
     const interval = setInterval(() => tick(), 2200)
@@ -97,13 +101,23 @@ export default function App() {
         onOpenSettings={() => setModal('settings')}
         onOpenReports={() => setModal('reports')}
         onOpenAlerts={() => setModal('alerts')}
+        onOpenHistory={() => setModal('history')}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar siloName={siloName} theme={theme} onToggleTheme={toggleTheme} onLogout={handleLogout} />
+        <TopBar
+          silos={silos}
+          activeSiloId={activeSiloId}
+          onSwitchSilo={switchToSilo}
+          onCreateSilo={() => setModal('create-silo')}
+          onDeleteSilo={deleteSilo}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onLogout={handleLogout}
+        />
 
         <div className="flex min-h-0 flex-1">
-          <LeftPanel />
+          <LeftPanel onOpenHistory={() => setModal('history')} />
           <main className="relative min-w-0 flex-1">
             {viewMode === '3d' ? (
               <ErrorBoundary
@@ -119,9 +133,11 @@ export default function App() {
         </div>
       </div>
 
-      {modal === 'settings' && <SettingsModal onClose={() => setModal(null)} />}
+      {modal === 'settings' && <SettingsModal mode="edit" onClose={() => setModal(null)} />}
+      {modal === 'create-silo' && <SettingsModal mode="create" onClose={() => setModal(null)} />}
       {modal === 'alerts' && <AlertsPanel onClose={() => setModal(null)} />}
       {modal === 'reports' && <ReportsModal onClose={() => setModal(null)} />}
+      {modal === 'history' && <HistoryModal onClose={() => setModal(null)} />}
     </div>
   )
 }

@@ -7,6 +7,7 @@ import type {
   LidarScan,
   RawLidarScan,
   SiloDimensions,
+  SiloSummary,
   VolumeResult,
 } from '../types/silo'
 import { CUSTOM_SILO_ID, STANDARD_SILOS } from '../data/standardSilos'
@@ -19,6 +20,8 @@ import { supabase } from '../lib/supabaseClient'
 
 const HISTORY_LIMIT = 600
 const FLOW_LOG_LIMIT = 400
+const HISTORY_PERSIST_INTERVAL_MS = 5 * 60 * 1000
+const PERSISTED_HISTORY_WINDOW_MS = 7 * 24 * 3_600_000
 
 function levelStatusFor(percent: number): LevelStatus {
   if (percent < 15) return 'critico'
@@ -52,8 +55,11 @@ function buildAlerts(volume: VolumeResult, status: LevelStatus, temperatureC: nu
 }
 
 interface SiloState {
+  userId: string | null
+  silos: SiloSummary[]
   siloId: string | null
   configLoaded: boolean
+  lastHistoryPersistAt: number
   siloName: string
   standardId: string
   dims: SiloDimensions
@@ -84,6 +90,9 @@ interface SiloState {
   tick: () => void
   loadOrCreateSiloConfig: (userId: string) => Promise<void>
   saveSiloConfig: () => Promise<boolean>
+  switchToSilo: (siloId: string) => Promise<void>
+  createSiloWithConfig: (config: { nome: string; standardId: string; dims: SiloDimensions; grainId: string }) => Promise<boolean>
+  deleteSilo: (siloId: string) => Promise<void>
   resetConfig: () => void
 }
 
@@ -113,13 +122,94 @@ function freshState(dims: SiloDimensions, grain: GrainProfile, levelPercent: num
   return { scan, volume, status, flow, history }
 }
 
-const initialDims = STANDARD_SILOS[3]
-const initialGrain = GRAIN_PROFILES.find((g) => g.id === 'racao') ?? GRAIN_PROFILES[0]
+export const initialDims = STANDARD_SILOS[3]
+export const initialGrain = GRAIN_PROFILES.find((g) => g.id === 'racao') ?? GRAIN_PROFILES[0]
 const initial = freshState(initialDims, initialGrain, 68)
 
+interface SiloRow {
+  id: string
+  nome: string
+  standard_id: string
+  dims: SiloDimensions
+  grain_id: string
+}
+
+async function insertDefaultSilo(userId: string, nome: string): Promise<SiloRow | null> {
+  const { data, error } = await supabase
+    .from('silos')
+    .insert({ user_id: userId, nome, standard_id: initialDims.id, dims: initialDims, grain_id: initialGrain.id })
+    .select()
+    .single()
+
+  if (error || !data) {
+    console.error('Falha ao criar silo padrão:', error)
+    return null
+  }
+  return data as SiloRow
+}
+
+async function loadHistoryAndLevel(siloId: string): Promise<{ history: HistorySample[]; levelPercent: number }> {
+  const windowStart = new Date(Date.now() - PERSISTED_HISTORY_WINDOW_MS).toISOString()
+  const { data, error } = await supabase
+    .from('historico_niveis')
+    .select('ocorrido_em, level_percent, volume_m3, mass_ton, temperature_c')
+    .eq('silo_id', siloId)
+    .gte('ocorrido_em', windowStart)
+    .order('ocorrido_em', { ascending: true })
+
+  if (error || !data || data.length === 0) {
+    if (error) console.error('Falha ao carregar histórico persistido:', error)
+    return { history: [], levelPercent: NaN }
+  }
+
+  const history: HistorySample[] = data.map((row) => ({
+    t: new Date(row.ocorrido_em).getTime(),
+    levelPercent: row.level_percent,
+    volumeM3: row.volume_m3,
+    massTon: row.mass_ton,
+    temperatureC: row.temperature_c,
+  }))
+
+  return { history, levelPercent: history[history.length - 1].levelPercent }
+}
+
+/** Makes `row` the active/working silo: loads its persisted history (if any) to resume
+ * roughly where it left off, instead of always restarting every silo at a fixed level. */
+async function applySiloRow(row: SiloRow, set: (partial: Partial<SiloState>) => void, get: () => SiloState) {
+  const dims = row.dims
+  const grain = GRAIN_PROFILES.find((g) => g.id === row.grain_id) ?? get().grain
+  const { history: persisted, levelPercent } = await loadHistoryAndLevel(row.id)
+  const startLevel = Number.isFinite(levelPercent) ? levelPercent : 50
+  const fresh = freshState(dims, grain, startLevel)
+  const history = persisted.length > 0 ? [...persisted, fresh.history[0]] : fresh.history
+
+  set({
+    siloId: row.id,
+    siloName: row.nome,
+    standardId: row.standard_id,
+    dims,
+    grain,
+    flowLog: [],
+    scan: fresh.scan,
+    volume: fresh.volume,
+    status: fresh.status,
+    flow: fresh.flow,
+    history,
+    targetLevelPercent: startLevel,
+    mode: 'idle',
+    isSimulating: true,
+    alerts: buildAlerts(fresh.volume, fresh.status, get().temperatureC, fresh.flow),
+    configLoaded: true,
+    lastHistoryPersistAt: Date.now(),
+  })
+}
+
 export const useSiloStore = create<SiloState>((set, get) => ({
+  userId: null,
+  silos: [],
   siloId: null,
   configLoaded: false,
+  lastHistoryPersistAt: 0,
   siloName: 'SILO ALIMENTADOR 01',
   standardId: initialDims.id,
   dims: initialDims,
@@ -197,6 +287,24 @@ export const useSiloStore = create<SiloState>((set, get) => ({
       alerts: buildAlerts(volume, status, temperatureC, flow),
       lastScanError: null,
     })
+
+    const { siloId, lastHistoryPersistAt } = get()
+    if (siloId && now - lastHistoryPersistAt >= HISTORY_PERSIST_INTERVAL_MS) {
+      set({ lastHistoryPersistAt: now })
+      supabase
+        .from('historico_niveis')
+        .insert({
+          silo_id: siloId,
+          ocorrido_em: new Date(now).toISOString(),
+          level_percent: volume.levelPercent,
+          volume_m3: volume.volumeM3,
+          mass_ton: volume.massTon,
+          temperature_c: temperatureC,
+        })
+        .then(({ error }) => {
+          if (error) console.error('Falha ao salvar histórico de nível:', error)
+        })
+    }
   },
 
   ingestRawScan: (raw) => {
@@ -245,49 +353,82 @@ export const useSiloStore = create<SiloState>((set, get) => ({
   },
 
   loadOrCreateSiloConfig: async (userId) => {
-    const { data: existing, error: selectError } = await supabase
+    set({ userId })
+    const { data: rows, error } = await supabase
       .from('silos')
       .select('*')
       .eq('user_id', userId)
-      .limit(1)
-      .maybeSingle()
+      .order('created_at', { ascending: true })
 
-    if (selectError) {
-      console.error('Falha ao carregar o silo do usuário:', selectError)
+    if (error) {
+      console.error('Falha ao carregar os silos do usuário:', error)
       return
     }
 
-    if (existing) {
-      const dims = existing.dims as SiloDimensions
-      const grain = GRAIN_PROFILES.find((g) => g.id === existing.grain_id) ?? get().grain
-      const fresh = freshState(dims, grain, get().targetLevelPercent)
-      set({
-        siloId: existing.id,
-        siloName: existing.nome,
-        standardId: existing.standard_id,
-        dims,
-        grain,
-        flowLog: [],
-        ...fresh,
-        alerts: buildAlerts(fresh.volume, fresh.status, get().temperatureC, fresh.flow),
-        configLoaded: true,
-      })
+    if (rows && rows.length > 0) {
+      set({ silos: rows.map((r) => ({ id: r.id, nome: r.nome })) })
+      await applySiloRow(rows[0] as SiloRow, set, get)
       return
     }
 
-    const { siloName, standardId, dims, grain } = get()
-    const { data: created, error: insertError } = await supabase
+    const created = await insertDefaultSilo(userId, 'Silo 1')
+    if (!created) return
+    set({ silos: [{ id: created.id, nome: created.nome }] })
+    await applySiloRow(created, set, get)
+  },
+
+  switchToSilo: async (siloId) => {
+    if (siloId === get().siloId) return
+    const { data: row, error } = await supabase.from('silos').select('*').eq('id', siloId).single()
+    if (error || !row) {
+      console.error('Falha ao trocar de silo:', error)
+      return
+    }
+    await applySiloRow(row as SiloRow, set, get)
+  },
+
+  createSiloWithConfig: async (config) => {
+    const { userId } = get()
+    if (!userId) return false
+    const { data: created, error } = await supabase
       .from('silos')
-      .insert({ user_id: userId, nome: siloName, standard_id: standardId, dims, grain_id: grain.id })
+      .insert({ user_id: userId, nome: config.nome, standard_id: config.standardId, dims: config.dims, grain_id: config.grainId })
       .select()
       .single()
 
-    if (insertError) {
-      console.error('Falha ao criar o silo padrão do usuário:', insertError)
+    if (error || !created) {
+      console.error('Falha ao criar silo:', error)
+      return false
+    }
+
+    set({ silos: [...get().silos, { id: created.id, nome: created.nome }] })
+    await applySiloRow(created as SiloRow, set, get)
+    return true
+  },
+
+  deleteSilo: async (siloId) => {
+    const { error } = await supabase.from('silos').delete().eq('id', siloId)
+    if (error) {
+      console.error('Falha ao excluir silo:', error)
       return
     }
 
-    set({ siloId: created.id, configLoaded: true })
+    const remaining = get().silos.filter((s) => s.id !== siloId)
+    set({ silos: remaining })
+
+    if (get().siloId !== siloId) return
+
+    if (remaining.length > 0) {
+      await get().switchToSilo(remaining[0].id)
+      return
+    }
+
+    const userId = get().userId
+    if (!userId) return
+    const created = await insertDefaultSilo(userId, 'Silo 1')
+    if (!created) return
+    set({ silos: [{ id: created.id, nome: created.nome }] })
+    await applySiloRow(created, set, get)
   },
 
   saveSiloConfig: async () => {
@@ -301,8 +442,9 @@ export const useSiloStore = create<SiloState>((set, get) => ({
       console.error('Falha ao salvar configuração do silo:', error)
       return false
     }
+    set({ silos: get().silos.map((s) => (s.id === siloId ? { ...s, nome: siloName } : s)) })
     return true
   },
 
-  resetConfig: () => set({ siloId: null, configLoaded: false }),
+  resetConfig: () => set({ userId: null, silos: [], siloId: null, configLoaded: false, lastHistoryPersistAt: 0 }),
 }))

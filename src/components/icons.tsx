@@ -86,6 +86,39 @@ export function MoonIcon() {
   )
 }
 
+export function ChevronDownIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor" className="h-3.5 w-3.5">
+      <path d="M6 9.5 12 15l6-5.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function PlusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor" className="h-4 w-4">
+      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" stroke="currentColor" className="h-4 w-4">
+      <path d="M4.5 7h15M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2M18 7l-.7 12.1a2 2 0 0 1-2 1.9H8.7a2 2 0 0 1-2-1.9L6 7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function ChartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" stroke="currentColor" className="h-5 w-5">
+      <path d="M4.5 4.5v14a1 1 0 0 0 1 1h14" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7.5 16 11 11.5l3 2.5 4.5-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function TrendIcon({ up }: { up: boolean }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`h-4 w-4 ${up ? 'text-(--color-good)' : 'text-(--color-danger)'}`}>

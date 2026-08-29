@@ -1,4 +1,4 @@
-import { BellIcon, ClipboardIcon, GearIcon, HelpIcon, HomeIcon } from '../icons'
+import { BellIcon, ChartIcon, ClipboardIcon, GearIcon, HelpIcon, HomeIcon } from '../icons'
 
 interface IconRailProps {
   active: string
@@ -7,14 +7,16 @@ interface IconRailProps {
   onOpenSettings: () => void
   onOpenReports: () => void
   onOpenAlerts: () => void
+  onOpenHistory: () => void
 }
 
-export function IconRail({ active, alertCount, onSelect, onOpenSettings, onOpenReports, onOpenAlerts }: IconRailProps) {
+export function IconRail({ active, alertCount, onSelect, onOpenSettings, onOpenReports, onOpenAlerts, onOpenHistory }: IconRailProps) {
   // Only 'dashboard' is a real navigation destination — the others open a modal and
   // never become the "active" section, so they never get the selected highlight.
   const navItems = [{ id: 'dashboard', label: 'Dashboard', icon: <HomeIcon />, onClick: () => onSelect('dashboard') }]
   const actionItems = [
     { id: 'relatorios', label: 'Relatórios', icon: <ClipboardIcon />, onClick: onOpenReports },
+    { id: 'historico', label: 'Histórico', icon: <ChartIcon />, onClick: onOpenHistory },
     { id: 'alertas', label: 'Alertas', icon: <BellIcon />, onClick: onOpenAlerts, badge: alertCount },
     { id: 'config', label: 'Configurações', icon: <GearIcon />, onClick: onOpenSettings },
   ]
