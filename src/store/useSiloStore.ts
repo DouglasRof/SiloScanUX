@@ -20,6 +20,9 @@ import { supabase } from '../lib/supabaseClient'
 
 const HISTORY_LIMIT = 600
 const FLOW_LOG_LIMIT = 400
+// Trava contra um arquivo .json malformado/malicioso travando o navegador ao tentar
+// processar uma varredura absurdamente densa — nenhum scan real chega perto disso.
+const MAX_IMPORTED_POINTS = 5000
 const HISTORY_PERSIST_INTERVAL_MS = 5 * 60 * 1000
 const PERSISTED_HISTORY_WINDOW_MS = 7 * 24 * 3_600_000
 
@@ -324,8 +327,16 @@ export const useSiloStore = create<SiloState>((set, get) => ({
   loadJsonScan: (json) => {
     try {
       if (isRawScan(json)) {
+        if (json.points.length > MAX_IMPORTED_POINTS) {
+          set({ lastScanError: `Arquivo tem pontos demais (máx. ${MAX_IMPORTED_POINTS}).` })
+          return
+        }
         get().ingestRawScan(json)
       } else if (isProcessedScan(json)) {
+        if (json.points.length > MAX_IMPORTED_POINTS) {
+          set({ lastScanError: `Arquivo tem pontos demais (máx. ${MAX_IMPORTED_POINTS}).` })
+          return
+        }
         get().ingestScan(json)
       } else {
         set({ lastScanError: 'JSON não reconhecido: esperado { sensorHeightM, points:[{angleDeg,radiusM,distanceM|heightM}] }' })

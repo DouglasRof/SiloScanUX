@@ -30,7 +30,9 @@ alter table public.device_api_keys enable row level security;
 -- Sem policy de select/insert pública de propósito — só a função abaixo (security
 -- definer) consulta essa tabela. Gerencie chaves direto pelo SQL Editor por enquanto.
 
-create function public.ingest_scan(
+-- create or replace (não "create") para que rodar este arquivo de novo, depois de
+-- uma atualização como a validação abaixo, funcione sem precisar dropar a função.
+create or replace function public.ingest_scan(
   p_api_key text,
   p_silo_id uuid,
   p_sensor_height_m numeric,
@@ -44,6 +46,10 @@ security definer set search_path = public
 as $$
 declare
   v_leitura_id uuid;
+  -- Um scan com resolução realista (mesmo bem densa) não deveria ter mais que
+  -- alguns milhares de pontos — isso também é uma trava contra payload malicioso
+  -- ou corrompido tentando inflar uma linha do banco.
+  v_max_points constant int := 5000;
 begin
   if not exists (
     select 1 from public.device_api_keys
@@ -54,6 +60,26 @@ begin
 
   if not exists (select 1 from public.silos where id = p_silo_id) then
     raise exception 'Silo não encontrado: %', p_silo_id;
+  end if;
+
+  if p_sensor_height_m is null or p_sensor_height_m <= 0 then
+    raise exception 'sensor_height_m precisa ser positivo';
+  end if;
+
+  if p_resolution_m is null or p_resolution_m <= 0 then
+    raise exception 'resolution_m precisa ser positivo';
+  end if;
+
+  if jsonb_typeof(p_points) is distinct from 'array' then
+    raise exception 'points precisa ser um array JSON';
+  end if;
+
+  if jsonb_array_length(p_points) = 0 then
+    raise exception 'points não pode ser vazio';
+  end if;
+
+  if jsonb_array_length(p_points) > v_max_points then
+    raise exception 'points excede o limite de % elementos', v_max_points;
   end if;
 
   insert into public.leituras (silo_id, sensor_height_m, resolution_m, points, origem)

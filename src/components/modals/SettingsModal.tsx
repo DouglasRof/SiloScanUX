@@ -27,6 +27,9 @@ function nonNegative(value: string): number {
 
 const siloLines = [...new Set(STANDARD_SILOS.map((s) => s.line))]
 
+// 2MB é folgado pra um scan real, apertado o bastante contra um arquivo absurdo.
+const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024
+
 interface SettingsModalProps {
   onClose: () => void
   /** 'create' drafts a brand-new silo locally and only touches the database once the
@@ -130,6 +133,11 @@ export function SettingsModal({ onClose, mode = 'edit' }: SettingsModalProps) {
   function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setJsonError(`Arquivo maior que ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB.`)
+      e.target.value = ''
+      return
+    }
     file
       .text()
       .then((text) => {
