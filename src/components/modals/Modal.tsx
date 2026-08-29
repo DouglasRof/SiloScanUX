@@ -5,27 +5,39 @@ interface ModalProps {
   onClose: () => void
   children: ReactNode
   width?: number
+  closeOnBackdropClick?: boolean
 }
 
-export function Modal({ title, onClose, children, width = 480 }: ModalProps) {
+export function Modal({ title, onClose, children, width = 480, closeOnBackdropClick = true }: ModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  // onClose is an inline function at every call site, so a new reference lands on every
+  // parent render (e.g. typing into a field elsewhere in the app). Reading it through a ref
+  // keeps Escape wired to the latest callback without re-running the effect below — which
+  // would otherwise steal focus back to the close button on every keystroke.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null
     closeButtonRef.current?.focus()
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') onCloseRef.current()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       previouslyFocused?.focus()
     }
-  }, [onClose])
+  }, [])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 backdrop-blur-[2px]" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 backdrop-blur-[2px]"
+      onClick={closeOnBackdropClick ? onClose : undefined}
+    >
       <div
         role="dialog"
         aria-modal="true"
