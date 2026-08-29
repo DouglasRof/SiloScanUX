@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useSiloStore } from '../../store/useSiloStore'
 import { formatHours, formatNumber, formatTon } from '../../lib/format'
+import { HISTORY_RANGES, type HistoryRange } from '../../lib/historyRanges'
 import { TrendIcon } from '../icons'
 import { GaugeCard } from './GaugeCard'
 import { StatCard, BadgeCard } from './StatCard'
@@ -20,7 +22,8 @@ const STATUS_TONE: Record<string, 'good' | 'warn' | 'danger' | 'neutral'> = {
   cheio: 'warn',
 }
 
-export function LeftPanel() {
+export function LeftPanel({ onOpenHistory }: { onOpenHistory: () => void }) {
+  const [historyRange, setHistoryRange] = useState<HistoryRange>('24h')
   const volume = useSiloStore((s) => s.volume)
   const status = useSiloStore((s) => s.status)
   const flow = useSiloStore((s) => s.flow)
@@ -61,8 +64,26 @@ export function LeftPanel() {
       />
 
       <div className="rounded-2xl border border-(--color-line) bg-(--color-panel) p-3.5">
-        <p className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">HISTÓRICO DE NÍVEL (24H)</p>
-        <HistoryChart history={history} />
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">HISTÓRICO DE NÍVEL</p>
+          <div className="flex gap-1">
+            {(Object.keys(HISTORY_RANGES) as HistoryRange[]).map((range) => (
+              <button
+                key={range}
+                onClick={() => setHistoryRange(range)}
+                className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                  historyRange === range ? 'bg-(--color-brand-soft) text-(--color-brand-dark)' : 'text-(--color-ink-faint) hover:bg-(--color-panel-soft)'
+                }`}
+              >
+                {HISTORY_RANGES[range].label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <HistoryChart history={history} windowMs={HISTORY_RANGES[historyRange].windowMs} />
+        <button onClick={onOpenHistory} className="mt-2 text-[11px] font-semibold text-(--color-brand-dark) hover:underline">
+          Ver histórico completo →
+        </button>
       </div>
     </aside>
   )

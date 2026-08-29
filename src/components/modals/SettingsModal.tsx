@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
-import { useSiloStore } from '../../store/useSiloStore'
+import { useSiloStore, initialDims, initialGrain } from '../../store/useSiloStore'
 import { STANDARD_SILOS, CUSTOM_SILO_ID } from '../../data/standardSilos'
 import { GRAIN_PROFILES } from '../../data/grainProfiles'
 import { totalCapacityM3 } from '../../lib/volume'
 import type { FillMode } from '../../lib/mockLidar'
+import type { SiloDimensions } from '../../types/silo'
 import { TEXT_INPUT_CLASS } from '../../lib/formStyles'
 import { Modal } from './Modal'
 
@@ -26,12 +27,21 @@ function nonNegative(value: string): number {
 
 const siloLines = [...new Set(STANDARD_SILOS.map((s) => s.line))]
 
-export function SettingsModal({ onClose }: { onClose: () => void }) {
-  const siloName = useSiloStore((s) => s.siloName)
-  const standardId = useSiloStore((s) => s.standardId)
-  const dims = useSiloStore((s) => s.dims)
-  const grain = useSiloStore((s) => s.grain)
-  const mode = useSiloStore((s) => s.mode)
+interface SettingsModalProps {
+  onClose: () => void
+  /** 'create' drafts a brand-new silo locally and only touches the database once the
+   * user confirms — it must never mutate whichever silo is currently on screen. */
+  mode?: 'edit' | 'create'
+}
+
+export function SettingsModal({ onClose, mode = 'edit' }: SettingsModalProps) {
+  const isCreateMode = mode === 'create'
+
+  const activeSiloName = useSiloStore((s) => s.siloName)
+  const activeStandardId = useSiloStore((s) => s.standardId)
+  const activeDims = useSiloStore((s) => s.dims)
+  const activeGrain = useSiloStore((s) => s.grain)
+  const simMode = useSiloStore((s) => s.mode)
   const isSimulating = useSiloStore((s) => s.isSimulating)
   const targetLevelPercent = useSiloStore((s) => s.targetLevelPercent)
   const lastScanError = useSiloStore((s) => s.lastScanError)
@@ -45,6 +55,19 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const toggleSimulation = useSiloStore((s) => s.toggleSimulation)
   const loadJsonScan = useSiloStore((s) => s.loadJsonScan)
   const saveSiloConfig = useSiloStore((s) => s.saveSiloConfig)
+  const createSiloWithConfig = useSiloStore((s) => s.createSiloWithConfig)
+
+  // Draft state used only in create mode, kept completely separate from the active
+  // silo above so filling out this form never touches whatever is on screen already.
+  const [draftName, setDraftName] = useState('Novo silo')
+  const [draftStandardId, setDraftStandardId] = useState(initialDims.id)
+  const [draftDims, setDraftDims] = useState<SiloDimensions>(initialDims)
+  const [draftGrainId, setDraftGrainId] = useState(initialGrain.id)
+
+  const siloName = isCreateMode ? draftName : activeSiloName
+  const standardId = isCreateMode ? draftStandardId : activeStandardId
+  const dims = isCreateMode ? draftDims : activeDims
+  const grain = isCreateMode ? (GRAIN_PROFILES.find((g) => g.id === draftGrainId) ?? initialGrain) : activeGrain
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [jsonError, setJsonError] = useState<string | null>(null)
@@ -59,8 +82,47 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
     return () => clearTimeout(timeout)
   }, [saveStatus])
 
+  function handleNameChange(value: string) {
+    if (isCreateMode) setDraftName(value)
+    else setSiloName(value)
+  }
+
+  function handleStandardChange(id: string) {
+    if (!isCreateMode) {
+      setStandardSilo(id)
+      return
+    }
+    const model = STANDARD_SILOS.find((s) => s.id === id)
+    if (!model) return
+    setDraftStandardId(id)
+    setDraftDims(model)
+  }
+
+  function handleDimsChange(partial: Partial<SiloDimensions>) {
+    if (!isCreateMode) {
+      setCustomDimensions(partial)
+      return
+    }
+    setDraftStandardId(CUSTOM_SILO_ID)
+    setDraftDims((d) => ({ ...d, ...partial }))
+  }
+
+  function handleGrainChange(id: string) {
+    if (isCreateMode) setDraftGrainId(id)
+    else setGrainProfile(id)
+  }
+
   async function handleSave() {
     setSaveStatus('saving')
+    if (isCreateMode) {
+      const ok = await createSiloWithConfig({ nome: draftName.trim() || 'Novo silo', standardId: draftStandardId, dims: draftDims, grainId: draftGrainId })
+      if (ok) {
+        onClose()
+        return
+      }
+      setSaveStatus('error')
+      return
+    }
     const ok = await saveSiloConfig()
     setSaveStatus(ok ? 'saved' : 'error')
   }
@@ -84,18 +146,14 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Configurações do silo" onClose={onClose} width={520} closeOnBackdropClick={false}>
+    <Modal title={isCreateMode ? 'Novo silo' : 'Configurações do silo'} onClose={onClose} width={520} closeOnBackdropClick={false}>
       <div className="flex flex-col gap-4">
         <Field label="Identificação">
-          <input className={inputClass} value={siloName} onChange={(e) => setSiloName(e.target.value)} placeholder="SILO 03" />
+          <input className={inputClass} value={siloName} onChange={(e) => handleNameChange(e.target.value)} placeholder="SILO 03" />
         </Field>
 
         <Field label="Modelo de silo">
-          <select
-            className={inputClass}
-            value={standardId}
-            onChange={(e) => setStandardSilo(e.target.value)}
-          >
+          <select className={inputClass} value={standardId} onChange={(e) => handleStandardChange(e.target.value)}>
             {siloLines.map((line) => (
               <optgroup key={line} label={line}>
                 {STANDARD_SILOS.filter((s) => s.line === line).map((s) => (
@@ -117,7 +175,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               min={0}
               className={inputClass}
               value={dims.diameterM}
-              onChange={(e) => setCustomDimensions({ diameterM: nonNegative(e.target.value) })}
+              onChange={(e) => handleDimsChange({ diameterM: nonNegative(e.target.value) })}
             />
           </Field>
           <Field label="Altura da parede (m)">
@@ -127,7 +185,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               min={0}
               className={inputClass}
               value={dims.cylinderHeightM}
-              onChange={(e) => setCustomDimensions({ cylinderHeightM: nonNegative(e.target.value) })}
+              onChange={(e) => handleDimsChange({ cylinderHeightM: nonNegative(e.target.value) })}
             />
           </Field>
           <Field label="Altura do telhado (m)">
@@ -137,14 +195,14 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               min={0}
               className={inputClass}
               value={dims.roofHeightM}
-              onChange={(e) => setCustomDimensions({ roofHeightM: nonNegative(e.target.value) })}
+              onChange={(e) => handleDimsChange({ roofHeightM: nonNegative(e.target.value) })}
             />
           </Field>
           <Field label="Tipo de fundo">
             <select
               className={inputClass}
               value={dims.hopperType}
-              onChange={(e) => setCustomDimensions({ hopperType: e.target.value as 'flat' | 'cone' })}
+              onChange={(e) => handleDimsChange({ hopperType: e.target.value as 'flat' | 'cone' })}
             >
               <option value="cone">Fundo cônico (moega)</option>
               <option value="flat">Fundo plano</option>
@@ -159,7 +217,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                   min={0}
                   className={inputClass}
                   value={dims.hopperHeightM}
-                  onChange={(e) => setCustomDimensions({ hopperHeightM: nonNegative(e.target.value) })}
+                  onChange={(e) => handleDimsChange({ hopperHeightM: nonNegative(e.target.value) })}
                 />
               </Field>
               <Field label="Diâmetro da saída (m)">
@@ -169,7 +227,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                   min={0}
                   className={inputClass}
                   value={dims.outletDiameterM}
-                  onChange={(e) => setCustomDimensions({ outletDiameterM: nonNegative(e.target.value) })}
+                  onChange={(e) => handleDimsChange({ outletDiameterM: nonNegative(e.target.value) })}
                 />
               </Field>
             </>
@@ -182,7 +240,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         </p>
 
         <Field label="Produto armazenado">
-          <select className={inputClass} value={grain.id} onChange={(e) => setGrainProfile(e.target.value)}>
+          <select className={inputClass} value={grain.id} onChange={(e) => handleGrainChange(e.target.value)}>
             {GRAIN_PROFILES.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.name} — {g.bulkDensityKgM3} kg/m³
@@ -197,7 +255,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             disabled={saveStatus === 'saving'}
             className="rounded-lg bg-(--color-brand) px-4 py-2 text-xs font-bold text-white transition-colors hover:brightness-95 disabled:cursor-wait disabled:opacity-70"
           >
-            {saveStatus === 'saving' ? 'Salvando…' : 'Salvar configurações'}
+            {isCreateMode ? (saveStatus === 'saving' ? 'Criando…' : 'Criar silo') : saveStatus === 'saving' ? 'Salvando…' : 'Salvar configurações'}
           </button>
           {saveStatus === 'saved' && (
             <span className="text-xs font-semibold text-(--color-good)" role="status">
@@ -206,62 +264,66 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           )}
           {saveStatus === 'error' && (
             <span className="text-xs font-semibold text-(--color-danger)" role="alert">
-              Não foi possível salvar. Tente novamente.
+              {isCreateMode ? 'Não foi possível criar o silo. Tente novamente.' : 'Não foi possível salvar. Tente novamente.'}
             </span>
           )}
         </div>
 
-        <div className="rounded-xl border border-(--color-line) bg-(--color-panel-soft) p-3.5">
-          <p className="mb-2 text-[11px] font-bold tracking-wide text-(--color-ink-faint)">SIMULAÇÃO DO SENSOR LIDAR</p>
-          <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={targetLevelPercent}
-              onChange={(e) => setTargetLevelPercent(Number(e.target.value))}
-              aria-label="Nível alvo do silo (%)"
-              className="flex-1 accent-(--color-brand)"
-            />
-            <span className="w-12 text-right text-sm font-bold tabular">{targetLevelPercent.toFixed(0)}%</span>
-          </div>
-          <div className="mt-3 flex items-center gap-2">
-            {(['idle', 'filling', 'draining'] as FillMode[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                  mode === m ? 'bg-(--color-brand) text-white' : 'bg-white text-(--color-ink-soft) border border-(--color-line)'
-                }`}
-              >
-                {m === 'idle' ? 'Repouso' : m === 'filling' ? 'Abastecendo' : 'Descarregando'}
-              </button>
-            ))}
-            <button
-              onClick={toggleSimulation}
-              className={`ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                isSimulating ? 'bg-(--color-good-soft) text-(--color-good)' : 'bg-(--color-danger-soft) text-(--color-danger)'
-              }`}
-            >
-              {isSimulating ? 'Ativa' : 'Pausada'}
-            </button>
-          </div>
-        </div>
+        {!isCreateMode && (
+          <>
+            <div className="rounded-xl border border-(--color-line) bg-(--color-panel-soft) p-3.5">
+              <p className="mb-2 text-[11px] font-bold tracking-wide text-(--color-ink-faint)">SIMULAÇÃO DO SENSOR LIDAR</p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={targetLevelPercent}
+                  onChange={(e) => setTargetLevelPercent(Number(e.target.value))}
+                  aria-label="Nível alvo do silo (%)"
+                  className="flex-1 accent-(--color-brand)"
+                />
+                <span className="w-12 text-right text-sm font-bold tabular">{targetLevelPercent.toFixed(0)}%</span>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                {(['idle', 'filling', 'draining'] as FillMode[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMode(m)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                      simMode === m ? 'bg-(--color-brand) text-white' : 'bg-white text-(--color-ink-soft) border border-(--color-line)'
+                    }`}
+                  >
+                    {m === 'idle' ? 'Repouso' : m === 'filling' ? 'Abastecendo' : 'Descarregando'}
+                  </button>
+                ))}
+                <button
+                  onClick={toggleSimulation}
+                  className={`ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                    isSimulating ? 'bg-(--color-good-soft) text-(--color-good)' : 'bg-(--color-danger-soft) text-(--color-danger)'
+                  }`}
+                >
+                  {isSimulating ? 'Ativa' : 'Pausada'}
+                </button>
+              </div>
+            </div>
 
-        <div className="rounded-xl border border-(--color-line) p-3.5">
-          <p className="mb-2 text-[11px] font-bold tracking-wide text-(--color-ink-faint)">IMPORTAR LEITURA DO SENSOR (JSON)</p>
-          <p className="mb-2 text-[11px] text-(--color-ink-faint)">
-            Aceita <code>{'{ sensorHeightM, points:[{angleDeg,radiusM,distanceM}] }'}</code> ou pontos já convertidos com <code>heightM</code>.
-          </p>
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="rounded-lg bg-(--color-brand-soft) px-3 py-1.5 text-xs font-semibold text-(--color-brand-dark)"
-          >
-            Carregar arquivo .json
-          </button>
-          <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={handleFile} />
-          {(jsonError || lastScanError) && <p className="mt-2 text-[11px] font-medium text-(--color-danger)">{jsonError ?? lastScanError}</p>}
-        </div>
+            <div className="rounded-xl border border-(--color-line) p-3.5">
+              <p className="mb-2 text-[11px] font-bold tracking-wide text-(--color-ink-faint)">IMPORTAR LEITURA DO SENSOR (JSON)</p>
+              <p className="mb-2 text-[11px] text-(--color-ink-faint)">
+                Aceita <code>{'{ sensorHeightM, points:[{angleDeg,radiusM,distanceM}] }'}</code> ou pontos já convertidos com <code>heightM</code>.
+              </p>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="rounded-lg bg-(--color-brand-soft) px-3 py-1.5 text-xs font-semibold text-(--color-brand-dark)"
+              >
+                Carregar arquivo .json
+              </button>
+              <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={handleFile} />
+              {(jsonError || lastScanError) && <p className="mt-2 text-[11px] font-medium text-(--color-danger)">{jsonError ?? lastScanError}</p>}
+            </div>
+          </>
+        )}
       </div>
     </Modal>
   )

@@ -9,6 +9,12 @@ export interface SiloDimensions {
   outletDiameterM: number
 }
 
+/** Lightweight entry for the silo switcher — the full config only loads when it becomes active. */
+export interface SiloSummary {
+  id: string
+  nome: string
+}
+
 export interface StandardSiloModel extends SiloDimensions {
   id: string
   name: string

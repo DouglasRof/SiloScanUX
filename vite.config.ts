@@ -12,5 +12,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // Exclude nested Claude Code worktrees — otherwise their copies of these same
+    // test files get picked up too, double-counting (or worse, drifting) results.
+    exclude: ['**/node_modules/**', '**/dist/**', '.claude/**'],
   },
 })
