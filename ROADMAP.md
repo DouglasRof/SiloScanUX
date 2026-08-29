@@ -78,11 +78,28 @@ Isto **não é uma fila única** — algumas trilhas rodam ao mesmo tempo.
 
 ### Trilha D — Depois que a Trilha A tiver um backend rodando
 
-- Cabeçalhos de segurança, WAF, validação de upload de scan.
-- Log de auditoria, RBAC fino.
-- Monitoramento de erro (Sentry) e uptime.
-- Ambiente de staging isolado.
-- Testes end-to-end dos fluxos críticos (login, scan, alertas).
+- ✅ Cabeçalhos de segurança ([vercel.json](../vercel.json): CSP, HSTS, X-Frame-Options,
+  etc.) — pronto pra Vercel; ao trocar de hospedagem, é só traduzir pro formato do
+  novo host, nada no app depende disso.
+- ✅ Validação de upload/ingestão de scan: limite de tamanho de arquivo (2MB) e de
+  quantidade de pontos (5000) tanto no import manual quanto na função
+  `ingest_scan` — rode `ingest_scan.sql` de novo pra pegar a atualização
+  (usa `create or replace`, seguro rodar por cima do que já existe).
+- ✅ Monitoramento de erro (Sentry) — [sentry.ts](../src/lib/sentry.ts), plugado no
+  `ErrorBoundary`. Desligado até você criar uma conta gratuita em sentry.io e
+  definir `VITE_SENTRY_DSN`.
+- ✅ Testes end-to-end ([e2e/login.spec.ts](../e2e/login.spec.ts), Playwright) —
+  `npm run test:e2e`. Cobre o fluxo mais crítico (tela de login sempre aparece
+  sem sessão, erro de login sempre aparece na tela) sem precisar de um projeto
+  Supabase real — falta expandir pra fluxos com sessão válida quando houver uma
+  conta de teste dedicada.
+- Em aberto (depende de decisões que a Trilha D sozinha não resolve):
+  - **WAF**: depende de qual CDN/proxy ficar na frente da Vercel (ex.: Cloudflare).
+  - **RBAC fino**: depende da decisão de organização/cooperativa ainda em aberto
+    (Trilha A, passo 2) — hoje cada silo pertence a um usuário, sem papéis.
+  - **Ambiente de staging** e **monitoramento de uptime**: precisam de um deploy
+    real na Vercel existindo primeiro (branch/preview deployments da Vercel já
+    resolvem staging de graça quando isso existir).
 
 ### Trilha E — Última milha antes do lançamento
 

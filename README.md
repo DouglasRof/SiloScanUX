@@ -26,6 +26,9 @@ e alertas. Desenvolvido para a InovAgroTec.
    - `supabase/account_deletion.sql`
 5. Crie seu primeiro usuário em **Authentication → Users** (marque *Auto Confirm User*).
 6. `npm run dev`
+7. (Opcional) Crie um projeto gratuito em [Sentry](https://sentry.io) e cole o DSN em
+   `VITE_SENTRY_DSN` no `.env.local` para monitoramento de erro em produção. Sem essa
+   variável, o app funciona normalmente, só sem reportar erros.
 
 ## Scripts
 
@@ -36,6 +39,7 @@ e alertas. Desenvolvido para a InovAgroTec.
 | `npm run lint` | Lint (oxlint) |
 | `npm test` | Roda a suíte de testes (Vitest) uma vez |
 | `npm run test:watch` | Vitest em modo watch |
+| `npm run test:e2e` | Testes end-to-end (Playwright) — sobe o próprio servidor de dev |
 | `npm run test:ingest -- <api-key> <silo-id>` | Simula um sensor enviando uma leitura, sem precisar do hardware físico |
 
 ## Estrutura
@@ -55,6 +59,9 @@ e alertas. Desenvolvido para a InovAgroTec.
   de ingestão
 - `legal/` — minutas de política de privacidade e termos de uso (precisam de revisão
   de um advogado antes de valer como documento oficial)
+- `e2e/` — testes end-to-end (Playwright)
+- `src/lib/sentry.ts` — inicialização do Sentry (fica desligado sem `VITE_SENTRY_DSN`)
+- `vercel.json` — cabeçalhos de segurança (CSP, HSTS, etc.) para deploy na Vercel
 
 ## Estado do projeto
 
