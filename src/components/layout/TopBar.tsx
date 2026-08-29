@@ -1,4 +1,4 @@
-import { LogoutIcon, MoonIcon, SiloLogo, SunIcon } from '../icons'
+import { LogoutIcon, MoonIcon, SiloLogo, SunIcon, UserIcon } from '../icons'
 import type { Theme } from '../../hooks/useTheme'
 import type { SiloSummary } from '../../types/silo'
 import { SiloSwitcher } from './SiloSwitcher'
@@ -11,10 +11,11 @@ interface TopBarProps {
   onDeleteSilo: (id: string) => void
   theme: Theme
   onToggleTheme: () => void
+  onOpenAccount: () => void
   onLogout: () => void
 }
 
-export function TopBar({ silos, activeSiloId, onSwitchSilo, onCreateSilo, onDeleteSilo, theme, onToggleTheme, onLogout }: TopBarProps) {
+export function TopBar({ silos, activeSiloId, onSwitchSilo, onCreateSilo, onDeleteSilo, theme, onToggleTheme, onOpenAccount, onLogout }: TopBarProps) {
   return (
     <header className="relative z-30 flex h-14 shrink-0 items-center justify-between border-b border-(--color-line) bg-(--color-panel) px-5">
       <div className="flex items-center gap-2.5">
@@ -32,6 +33,9 @@ export function TopBar({ silos, activeSiloId, onSwitchSilo, onCreateSilo, onDele
           title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
         >
           {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+        </button>
+        <button onClick={onOpenAccount} className="flex h-9 w-9 items-center justify-center rounded-lg text-(--color-ink-soft) hover:bg-(--color-panel-soft)" title="Minha conta">
+          <UserIcon />
         </button>
         <button onClick={onLogout} className="flex h-9 w-9 items-center justify-center rounded-lg text-(--color-ink-soft) hover:bg-(--color-panel-soft)" title="Sair">
           <LogoutIcon />

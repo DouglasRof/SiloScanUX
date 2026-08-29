@@ -62,11 +62,19 @@ Isto **não é uma fila única** — algumas trilhas rodam ao mesmo tempo.
 
 ### Trilha C — Jurídico / LGPD (começa já, em paralelo, não trava a engenharia)
 
-- Política de privacidade, termos de uso, base legal e decisão de residência dos
-  dados são documentos e decisões, não código — começar a redigir com um advogado
-  agora para estarem prontos quando o cadastro real existir.
-- O que depende de código (log de auditoria, mecanismo de exclusão de dados) só
-  entra depois que o backend da Trilha A existir.
+- ✅ Minutas de [política de privacidade](../legal/politica-de-privacidade.md) e
+  [termos de uso](../legal/termos-de-uso.md) — **não são parecer jurídico**, têm
+  placeholders (`[CNPJ]`, endereço, etc.) e precisam de revisão de um advogado
+  especializado em LGPD antes de valer como documento oficial.
+- ✅ Log de auditoria ([audit_log.sql](../supabase/audit_log.sql)) — registra
+  criação/exclusão de silo, por usuário.
+- ✅ Exclusão de conta pelo próprio usuário
+  ([account_deletion.sql](../supabase/account_deletion.sql) + botão em "Minha
+  conta" no app) — apaga a conta e, em cascata, todos os silos/leituras/histórico.
+- ✅ Exportação de dados (portabilidade, LGPD art. 18) — botão em "Minha conta",
+  baixa um `.json` com todos os silos, leituras, histórico e alertas do usuário.
+- Ainda em aberto: decisão formal de residência dos dados, contratos de operador
+  com fornecedores, DPO formalizado, RIPD — itens da Trilha E.
 
 ### Trilha D — Depois que a Trilha A tiver um backend rodando
 

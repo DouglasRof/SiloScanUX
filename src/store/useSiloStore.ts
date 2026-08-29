@@ -93,6 +93,8 @@ interface SiloState {
   switchToSilo: (siloId: string) => Promise<void>
   createSiloWithConfig: (config: { nome: string; standardId: string; dims: SiloDimensions; grainId: string }) => Promise<boolean>
   deleteSilo: (siloId: string) => Promise<void>
+  exportMyData: () => Promise<Record<string, unknown> | null>
+  deleteMyAccount: () => Promise<boolean>
   resetConfig: () => void
 }
 
@@ -443,6 +445,50 @@ export const useSiloStore = create<SiloState>((set, get) => ({
       return false
     }
     set({ silos: get().silos.map((s) => (s.id === siloId ? { ...s, nome: siloName } : s)) })
+    return true
+  },
+
+  exportMyData: async () => {
+    const { userId } = get()
+    if (!userId) return null
+
+    const { data: silos, error: silosError } = await supabase.from('silos').select('*').eq('user_id', userId)
+    if (silosError || !silos) {
+      console.error('Falha ao exportar silos:', silosError)
+      return null
+    }
+
+    const siloIds = silos.map((s) => s.id)
+    if (siloIds.length === 0) {
+      return { exportadoEm: new Date().toISOString(), silos: [], leituras: [], historicoNiveis: [], alertas: [] }
+    }
+
+    const [leiturasRes, historicoRes, alertasRes] = await Promise.all([
+      supabase.from('leituras').select('*').in('silo_id', siloIds),
+      supabase.from('historico_niveis').select('*').in('silo_id', siloIds),
+      supabase.from('alertas').select('*').in('silo_id', siloIds),
+    ])
+
+    if (leiturasRes.error || historicoRes.error || alertasRes.error) {
+      console.error('Falha ao exportar dados relacionados:', leiturasRes.error, historicoRes.error, alertasRes.error)
+      return null
+    }
+
+    return {
+      exportadoEm: new Date().toISOString(),
+      silos,
+      leituras: leiturasRes.data ?? [],
+      historicoNiveis: historicoRes.data ?? [],
+      alertas: alertasRes.data ?? [],
+    }
+  },
+
+  deleteMyAccount: async () => {
+    const { error } = await supabase.rpc('delete_my_account')
+    if (error) {
+      console.error('Falha ao excluir a conta:', error)
+      return false
+    }
     return true
   },
 
