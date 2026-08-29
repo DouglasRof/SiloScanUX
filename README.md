@@ -22,6 +22,8 @@ e alertas. Desenvolvido para a InovAgroTec.
    - `supabase/schema.sql`
    - `supabase/ingest_scan.sql`
    - `supabase/historico_niveis.sql`
+   - `supabase/audit_log.sql`
+   - `supabase/account_deletion.sql`
 5. Crie seu primeiro usuário em **Authentication → Users** (marque *Auto Confirm User*).
 6. `npm run dev`
 
@@ -46,10 +48,13 @@ e alertas. Desenvolvido para a InovAgroTec.
 - `src/store/useSiloStore.ts` — estado global (Zustand); a configuração do silo persiste
   no Supabase, a simulação ao vivo roda só na memória do navegador
 - `src/lib/supabaseClient.ts` — client do Supabase
-- `supabase/` — schema do banco (`schema.sql`) e a função de ingestão de leituras de
-  sensor (`ingest_scan.sql`)
+- `supabase/` — schema do banco (`schema.sql`), a função de ingestão de leituras de
+  sensor (`ingest_scan.sql`), log de auditoria (`audit_log.sql`) e exclusão de conta
+  (`account_deletion.sql`)
 - `scripts/test-ingest-scan.mjs` — simula um dispositivo de campo chamando o endpoint
   de ingestão
+- `legal/` — minutas de política de privacidade e termos de uso (precisam de revisão
+  de um advogado antes de valer como documento oficial)
 
 ## Estado do projeto
 

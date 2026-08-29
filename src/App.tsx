@@ -13,10 +13,11 @@ import { SettingsModal } from './components/modals/SettingsModal'
 import { AlertsPanel } from './components/modals/AlertsPanel'
 import { ReportsModal } from './components/modals/ReportsModal'
 import { HistoryModal } from './components/modals/HistoryModal'
+import { AccountModal } from './components/modals/AccountModal'
 import { useSiloStore } from './store/useSiloStore'
 import { useTheme } from './hooks/useTheme'
 
-type ModalKind = 'settings' | 'create-silo' | 'alerts' | 'reports' | 'history' | null
+type ModalKind = 'settings' | 'create-silo' | 'alerts' | 'reports' | 'history' | 'account' | null
 
 function Silo3DErrorFallback({ onRetry, onSwitchTo2D }: { onRetry: () => void; onSwitchTo2D: () => void }) {
   return (
@@ -113,6 +114,7 @@ export default function App() {
           onDeleteSilo={deleteSilo}
           theme={theme}
           onToggleTheme={toggleTheme}
+          onOpenAccount={() => setModal('account')}
           onLogout={handleLogout}
         />
 
@@ -138,6 +140,7 @@ export default function App() {
       {modal === 'alerts' && <AlertsPanel onClose={() => setModal(null)} />}
       {modal === 'reports' && <ReportsModal onClose={() => setModal(null)} />}
       {modal === 'history' && <HistoryModal onClose={() => setModal(null)} />}
+      {modal === 'account' && <AccountModal onClose={() => setModal(null)} />}
     </div>
   )
 }
