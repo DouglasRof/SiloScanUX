@@ -5,6 +5,19 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      # Vite + its plugins share peer-dependency ranges (@vitejs/plugin-react needs a
+      # specific Vite major, @tailwindcss/vite and vitest do too) — bumping one alone
+      # without the others produces an ERESOLVE conflict, like the vite@8 /
+      # plugin-react@6 PRs did. Grouping them means Dependabot only proposes a version
+      # combination it already resolved together.
+      vite-ecosystem:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "@tailwindcss/vite"
+          - "vitest"
+          - "@vitest/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
