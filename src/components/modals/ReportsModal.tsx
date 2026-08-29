@@ -30,7 +30,7 @@ export function ReportsModal({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal title="Relatório do silo" onClose={onClose} width={560}>
-      <div className="grid grid-cols-3 gap-3 rounded-xl bg-(--color-panel-soft) p-3.5">
+      <div className="grid grid-cols-2 gap-3 rounded-xl bg-(--color-panel-soft) p-3.5 sm:grid-cols-3">
         <div>
           <p className="text-[11px] font-bold text-(--color-ink-faint)">SILO</p>
           <p className="text-sm font-semibold">{siloName}</p>
@@ -66,8 +66,8 @@ export function ReportsModal({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      <div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-(--color-line) scroll-slim">
-        <table className="w-full text-left text-[12px]">
+      <div className="mt-2 max-h-64 overflow-auto rounded-xl border border-(--color-line) scroll-slim">
+        <table className="w-full min-w-[420px] text-left text-[12px]">
           <thead className="sticky top-0 bg-(--color-panel-soft) text-(--color-ink-faint)">
             <tr>
               <th className="px-3 py-2 font-semibold">Data/Hora</th>

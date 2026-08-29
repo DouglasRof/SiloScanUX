@@ -41,6 +41,7 @@ e alertas. Desenvolvido para a InovAgroTec.
 | `npm run test:watch` | Vitest em modo watch |
 | `npm run test:e2e` | Testes end-to-end (Playwright) — sobe o próprio servidor de dev |
 | `npm run test:ingest -- <api-key> <silo-id>` | Simula um sensor enviando uma leitura, sem precisar do hardware físico |
+| `npm run preview` | Serve o build de produção (`dist/`) — é como testar o PWA de verdade, já que o service worker só ativa no build |
 
 ## Estrutura
 
@@ -62,6 +63,16 @@ e alertas. Desenvolvido para a InovAgroTec.
 - `e2e/` — testes end-to-end (Playwright)
 - `src/lib/sentry.ts` — inicialização do Sentry (fica desligado sem `VITE_SENTRY_DSN`)
 - `vercel.json` — cabeçalhos de segurança (CSP, HSTS, etc.) para deploy na Vercel
+- `public/icons/` — ícone do PWA (só 192×192 por enquanto — falta um 512×512 de
+  verdade, feito num editor de imagem, não gerado programaticamente)
+
+## Mobile / PWA
+
+A partir do breakpoint `sm` do Tailwind, o layout muda de barra lateral pra barra
+inferior fixa (padrão de app mobile), e o painel de dados empilha abaixo da
+visualização 3D/2D em vez de ficar ao lado. O app é instalável como PWA (ícone na
+tela inicial, abre em tela cheia) — isso só ativa no build de produção
+(`npm run build && npm run preview`), não no `npm run dev`.
 
 ## Estado do projeto
 

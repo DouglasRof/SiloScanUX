@@ -34,14 +34,15 @@ export function SiloSwitcher({ silos, activeSiloId, onSwitch, onCreate, onDelete
     <div ref={rootRef} className="absolute left-1/2 -translate-x-1/2">
       <button
         onClick={() => (isOpen ? close() : setIsOpen(true))}
-        className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-bold tracking-[0.14em] text-(--color-ink-soft) hover:bg-(--color-panel-soft)"
+        className="flex max-w-[70vw] items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-bold tracking-[0.14em] text-(--color-ink-soft) hover:bg-(--color-panel-soft)"
       >
-        DASHBOARD DE CAPACIDADE — {activeName}
+        <span className="hidden sm:inline">DASHBOARD DE CAPACIDADE — </span>
+        <span className="truncate">{activeName}</span>
         <ChevronDownIcon />
       </button>
 
       {isOpen && (
-        <div className="absolute left-1/2 top-full z-20 mt-1 w-72 -translate-x-1/2 rounded-xl border border-(--color-line) bg-(--color-panel) py-1.5 text-left normal-case shadow-lg">
+        <div className="absolute left-1/2 top-full z-20 mt-1 w-[calc(100vw-2rem)] max-w-72 -translate-x-1/2 rounded-xl border border-(--color-line) bg-(--color-panel) py-1.5 text-left normal-case shadow-lg">
           {silos.map((silo) =>
             confirmDeleteId === silo.id ? (
               <div key={silo.id} className="mx-1.5 my-0.5 flex items-center gap-1.5 rounded-lg bg-(--color-danger-soft) px-2.5 py-1.5">

@@ -34,7 +34,7 @@ export function LeftPanel({ onOpenHistory }: { onOpenHistory: () => void }) {
   const netRate = flow.netRateTonHour
 
   return (
-    <aside className="flex w-[300px] shrink-0 flex-col gap-3 overflow-y-auto border-r border-(--color-line) bg-(--color-panel-soft) p-3.5 scroll-slim">
+    <aside className="order-2 flex w-full shrink-0 flex-col gap-3 overflow-visible border-r border-(--color-line) bg-(--color-panel-soft) p-3.5 scroll-slim sm:order-none sm:w-[300px] sm:overflow-y-auto">
       <GaugeCard label="Volume atual" valueM3={volume.volumeM3} percent={volume.levelPercent} />
 
       <StatCard label="Massa total" value={formatTon(volume.massTon)} unit="t" />
