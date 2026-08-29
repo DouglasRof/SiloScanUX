@@ -1,18 +1,36 @@
 import { useState, type FormEvent } from 'react'
 import logoUrl from '../../assets/inovagrotec-logo.jpg'
 import { TEXT_INPUT_CLASS } from '../../lib/formStyles'
+import { supabase } from '../../lib/supabaseClient'
 
 const inputClass = `${TEXT_INPUT_CLASS} px-3 py-2`
 
-export function LoginScreen({ onLogin }: { onLogin: () => void }) {
+function authErrorMessage(message: string): string {
+  if (message.includes('Invalid login credentials')) return 'E-mail ou senha incorretos.'
+  if (message.includes('Email not confirmed')) return 'Confirme seu e-mail antes de entrar.'
+  return 'Não foi possível entrar. Tente novamente em instantes.'
+}
+
+// A sessão do Supabase já persiste em localStorage por padrão — "Lembrar de mim"
+// ainda não altera esse comportamento, é só a UI por enquanto.
+export function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    // No auth wired up yet — any input (or none) just moves past the gate for now.
-    onLogin()
+    setError(null)
+    setIsSubmitting(true)
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    setIsSubmitting(false)
+    if (signInError) {
+      console.error('Supabase signInWithPassword falhou:', signInError)
+      setError(authErrorMessage(signInError.message))
+    }
+    // Em caso de sucesso, o App ouve onAuthStateChange e troca de tela sozinho.
   }
 
   return (
@@ -65,8 +83,14 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
             </button>
           </div>
 
-          <button type="submit" className="mt-1.5 rounded-xl bg-(--color-brand) py-2.5 text-[14px] font-bold text-white transition-colors hover:brightness-95">
-            Entrar
+          {error && <p className="text-[12px] font-medium text-(--color-danger)" role="alert">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-1.5 rounded-xl bg-(--color-brand) py-2.5 text-[14px] font-bold text-white transition-colors hover:brightness-95 disabled:cursor-wait disabled:opacity-70"
+          >
+            {isSubmitting ? 'Entrando…' : 'Entrar'}
           </button>
         </form>
 

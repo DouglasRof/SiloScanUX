@@ -2,7 +2,11 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
 .claude/scheduled_tasks.lock
+
+# Prints/mídia local (pode conter segredos, ex: chave de API) — nunca commitar
+midias-ignore/
 
 # Editor
 .vscode/*

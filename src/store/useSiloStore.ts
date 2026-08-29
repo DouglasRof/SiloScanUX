@@ -15,6 +15,7 @@ import { computeVolumeFromScan, rawPointToHeight } from '../lib/volume'
 import { generateSyntheticScan, type FillMode } from '../lib/mockLidar'
 import { computeFlowEstimate, type FlowLogEntry } from '../lib/flow'
 import type { FlowEstimate } from '../types/silo'
+import { supabase } from '../lib/supabaseClient'
 
 const HISTORY_LIMIT = 600
 const FLOW_LOG_LIMIT = 400
@@ -51,6 +52,8 @@ function buildAlerts(volume: VolumeResult, status: LevelStatus, temperatureC: nu
 }
 
 interface SiloState {
+  siloId: string | null
+  configLoaded: boolean
   siloName: string
   standardId: string
   dims: SiloDimensions
@@ -79,6 +82,9 @@ interface SiloState {
   ingestRawScan: (raw: RawLidarScan) => void
   loadJsonScan: (json: unknown) => void
   tick: () => void
+  loadOrCreateSiloConfig: (userId: string) => Promise<void>
+  saveSiloConfig: () => Promise<boolean>
+  resetConfig: () => void
 }
 
 function isRawScan(json: unknown): json is RawLidarScan {
@@ -112,6 +118,8 @@ const initialGrain = GRAIN_PROFILES.find((g) => g.id === 'racao') ?? GRAIN_PROFI
 const initial = freshState(initialDims, initialGrain, 68)
 
 export const useSiloStore = create<SiloState>((set, get) => ({
+  siloId: null,
+  configLoaded: false,
   siloName: 'SILO ALIMENTADOR 01',
   standardId: initialDims.id,
   dims: initialDims,
@@ -235,4 +243,66 @@ export const useSiloStore = create<SiloState>((set, get) => ({
     get().ingestScan(scan)
     set({ temperatureC: nextTemp })
   },
+
+  loadOrCreateSiloConfig: async (userId) => {
+    const { data: existing, error: selectError } = await supabase
+      .from('silos')
+      .select('*')
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle()
+
+    if (selectError) {
+      console.error('Falha ao carregar o silo do usuário:', selectError)
+      return
+    }
+
+    if (existing) {
+      const dims = existing.dims as SiloDimensions
+      const grain = GRAIN_PROFILES.find((g) => g.id === existing.grain_id) ?? get().grain
+      const fresh = freshState(dims, grain, get().targetLevelPercent)
+      set({
+        siloId: existing.id,
+        siloName: existing.nome,
+        standardId: existing.standard_id,
+        dims,
+        grain,
+        flowLog: [],
+        ...fresh,
+        alerts: buildAlerts(fresh.volume, fresh.status, get().temperatureC, fresh.flow),
+        configLoaded: true,
+      })
+      return
+    }
+
+    const { siloName, standardId, dims, grain } = get()
+    const { data: created, error: insertError } = await supabase
+      .from('silos')
+      .insert({ user_id: userId, nome: siloName, standard_id: standardId, dims, grain_id: grain.id })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Falha ao criar o silo padrão do usuário:', insertError)
+      return
+    }
+
+    set({ siloId: created.id, configLoaded: true })
+  },
+
+  saveSiloConfig: async () => {
+    const { siloId, siloName, standardId, dims, grain } = get()
+    if (!siloId) return false
+    const { error } = await supabase
+      .from('silos')
+      .update({ nome: siloName, standard_id: standardId, dims, grain_id: grain.id })
+      .eq('id', siloId)
+    if (error) {
+      console.error('Falha ao salvar configuração do silo:', error)
+      return false
+    }
+    return true
+  },
+
+  resetConfig: () => set({ siloId: null, configLoaded: false }),
 }))

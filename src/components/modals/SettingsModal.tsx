@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { useSiloStore } from '../../store/useSiloStore'
 import { STANDARD_SILOS, CUSTOM_SILO_ID } from '../../data/standardSilos'
 import { GRAIN_PROFILES } from '../../data/grainProfiles'
@@ -44,11 +44,26 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const setTargetLevelPercent = useSiloStore((s) => s.setTargetLevelPercent)
   const toggleSimulation = useSiloStore((s) => s.toggleSimulation)
   const loadJsonScan = useSiloStore((s) => s.loadJsonScan)
+  const saveSiloConfig = useSiloStore((s) => s.saveSiloConfig)
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [jsonError, setJsonError] = useState<string | null>(null)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   const isCustom = standardId === CUSTOM_SILO_ID
+
+  // Volta pro estado neutro um tempo depois de mostrar "Salvo" ou o erro, em vez de ficar preso ali.
+  useEffect(() => {
+    if (saveStatus !== 'saved' && saveStatus !== 'error') return
+    const timeout = setTimeout(() => setSaveStatus('idle'), 2500)
+    return () => clearTimeout(timeout)
+  }, [saveStatus])
+
+  async function handleSave() {
+    setSaveStatus('saving')
+    const ok = await saveSiloConfig()
+    setSaveStatus(ok ? 'saved' : 'error')
+  }
 
   function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -69,7 +84,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Configurações do silo" onClose={onClose} width={520}>
+    <Modal title="Configurações do silo" onClose={onClose} width={520} closeOnBackdropClick={false}>
       <div className="flex flex-col gap-4">
         <Field label="Identificação">
           <input className={inputClass} value={siloName} onChange={(e) => setSiloName(e.target.value)} placeholder="SILO 03" />
@@ -175,6 +190,26 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             ))}
           </select>
         </Field>
+
+        <div className="flex items-center gap-3 border-t border-(--color-line) pt-4">
+          <button
+            onClick={handleSave}
+            disabled={saveStatus === 'saving'}
+            className="rounded-lg bg-(--color-brand) px-4 py-2 text-xs font-bold text-white transition-colors hover:brightness-95 disabled:cursor-wait disabled:opacity-70"
+          >
+            {saveStatus === 'saving' ? 'Salvando…' : 'Salvar configurações'}
+          </button>
+          {saveStatus === 'saved' && (
+            <span className="text-xs font-semibold text-(--color-good)" role="status">
+              Salvo com sucesso.
+            </span>
+          )}
+          {saveStatus === 'error' && (
+            <span className="text-xs font-semibold text-(--color-danger)" role="alert">
+              Não foi possível salvar. Tente novamente.
+            </span>
+          )}
+        </div>
 
         <div className="rounded-xl border border-(--color-line) bg-(--color-panel-soft) p-3.5">
           <p className="mb-2 text-[11px] font-bold tracking-wide text-(--color-ink-faint)">SIMULAÇÃO DO SENSOR LIDAR</p>
