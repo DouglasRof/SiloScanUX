@@ -103,10 +103,29 @@ Isto **não é uma fila única** — algumas trilhas rodam ao mesmo tempo.
 
 ### Trilha E — Última milha antes do lançamento
 
-- Teste de penetração externo.
-- Contratos de operador de dados com fornecedores (hosting, e-mail, analytics).
-- Encarregado de dados (DPO) formalizado.
-- Política de retenção e expurgo de dados.
+- ✅ **Auto-revisão de segurança** (28/08/2026) — não substitui o pentest
+  externo (isso é serviço profissional pago, precisa ser contratado), mas
+  revisei RLS de todas as tabelas, todas as funções `security definer`
+  (`search_path` fixado corretamente em todas, sem risco de escalonamento de
+  privilégio encontrado), histórico do git (nenhum segredo real jamais
+  commitado) e padrões comuns de XSS no front-end (nenhum encontrado). Achados
+  menores, não bloqueantes: `ingest_scan` não tem rate limiting próprio contra
+  tentativas repetidas de chave inválida (mitigado pela entropia da chave, mas
+  vale conferir os limites de taxa da API no painel do Supabase); mensagens de
+  erro da função distinguem "chave inválida" de "silo não encontrado" (baixo
+  risco, já que os IDs são UUIDs não sequenciais).
+- Teste de penetração externo — ainda precisa ser contratado com uma empresa
+  especializada; não é algo que eu posso fazer.
+- ✅ [fornecedores-lgpd.md](../legal/fornecedores-lgpd.md) — checklist dos
+  DPAs (contratos de operador) de Supabase/Vercel/Sentry, com link direto pra
+  cada um. Aceitar/assinar precisa ser feito por alguém com autoridade pra
+  contratar em nome da empresa.
+- Encarregado de dados (DPO) formalizado — decisão de quem assume o papel,
+  ainda em aberto; os documentos em `legal/` têm um placeholder esperando esse
+  nome/contato.
+- ✅ [politica-de-retencao.md](../legal/politica-de-retencao.md) — proposta de
+  prazos (minuta, não decisão). Uma vez você/advogado decidirem os prazos
+  reais, implemento o expurgo automático correspondente no banco.
 
 ### Trilha F — Pode esperar o pós-lançamento
 
