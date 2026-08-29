@@ -17,11 +17,11 @@ interface TopBarProps {
 
 export function TopBar({ silos, activeSiloId, onSwitchSilo, onCreateSilo, onDeleteSilo, theme, onToggleTheme, onOpenAccount, onLogout }: TopBarProps) {
   return (
-    <header className="relative z-30 flex h-14 shrink-0 items-center justify-between border-b border-(--color-line) bg-(--color-panel) px-5">
+    <header className="relative z-30 flex h-14 shrink-0 items-center justify-between border-b border-(--color-line) bg-(--color-panel) px-3 sm:px-5">
       <div className="flex items-center gap-2.5">
         <SiloLogo />
-        <span className="text-[15px] font-bold tracking-tight text-(--color-ink)">SiloScanUX</span>
-        <span className="rounded-full bg-(--color-brand-soft) px-2 py-0.5 text-[11px] font-semibold text-(--color-brand-dark)">v{__APP_VERSION__}</span>
+        <span className="hidden text-[15px] font-bold tracking-tight text-(--color-ink) sm:inline">SiloScanUX</span>
+        <span className="hidden rounded-full bg-(--color-brand-soft) px-2 py-0.5 text-[11px] font-semibold text-(--color-brand-dark) sm:inline">v{__APP_VERSION__}</span>
       </div>
 
       <SiloSwitcher silos={silos} activeSiloId={activeSiloId} onSwitch={onSwitchSilo} onCreate={onCreateSilo} onDelete={onDeleteSilo} />

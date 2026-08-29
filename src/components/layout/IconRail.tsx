@@ -22,8 +22,10 @@ export function IconRail({ active, alertCount, onSelect, onOpenSettings, onOpenR
   ]
 
   return (
-    <nav className="flex w-14 shrink-0 flex-col items-center justify-between border-r border-(--color-line) bg-(--color-panel) py-4">
-      <div className="flex flex-col items-center gap-1">
+    // Barra inferior fixa no celular (nav típica de app mobile); vira rail vertical à
+    // esquerda a partir do breakpoint `sm`, como sempre foi no desktop.
+    <nav className="fixed inset-x-0 bottom-0 z-30 flex shrink-0 items-center justify-around border-t border-(--color-line) bg-(--color-panel) py-1.5 sm:static sm:inset-auto sm:z-auto sm:w-14 sm:flex-col sm:items-center sm:justify-between sm:border-t-0 sm:border-r sm:py-4">
+      <div className="flex items-center gap-1 sm:flex-col">
         {navItems.map((item) => (
           <button
             key={item.id}
@@ -38,7 +40,7 @@ export function IconRail({ active, alertCount, onSelect, onOpenSettings, onOpenR
             {item.icon}
           </button>
         ))}
-        <div className="my-1.5 h-px w-7 bg-(--color-line)" />
+        <div className="hidden sm:my-1.5 sm:block sm:h-px sm:w-7 sm:bg-(--color-line)" />
         {actionItems.map((item) => (
           <button
             key={item.id}
@@ -60,7 +62,7 @@ export function IconRail({ active, alertCount, onSelect, onOpenSettings, onOpenR
         title="Ajuda (em breve)"
         aria-disabled="true"
         disabled
-        className="flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-xl text-(--color-ink-faint) opacity-40"
+        className="hidden h-11 w-11 cursor-not-allowed items-center justify-center rounded-xl text-(--color-ink-faint) opacity-40 sm:flex"
       >
         <HelpIcon />
       </button>

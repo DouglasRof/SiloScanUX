@@ -94,7 +94,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-(--color-panel)">
+    <div className="flex h-screen w-screen overflow-hidden bg-(--color-panel) pb-14 sm:pb-0">
       <IconRail
         active={activeRail}
         alertCount={alerts.length}
@@ -118,9 +118,9 @@ export default function App() {
           onLogout={handleLogout}
         />
 
-        <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto sm:flex-row sm:overflow-hidden">
           <LeftPanel onOpenHistory={() => setModal('history')} />
-          <main className="relative min-w-0 flex-1">
+          <main className="relative order-1 h-[42vh] w-full shrink-0 sm:order-none sm:h-auto sm:w-auto sm:min-w-0 sm:flex-1 sm:shrink">
             {viewMode === '3d' ? (
               <ErrorBoundary
                 fallback={(retry) => <Silo3DErrorFallback onRetry={retry} onSwitchTo2D={() => setViewMode('2d')} />}

@@ -76,8 +76,8 @@ export function HistoryModal({ onClose }: { onClose: () => void }) {
       )}
 
       <p className="mt-4 text-[11px] font-bold tracking-wide text-(--color-ink-faint)">{rows.length} LEITURAS NO PERÍODO</p>
-      <div className="mt-1 max-h-64 overflow-y-auto rounded-xl border border-(--color-line) scroll-slim">
-        <table className="w-full text-left text-[12px]">
+      <div className="mt-1 max-h-64 overflow-auto rounded-xl border border-(--color-line) scroll-slim">
+        <table className="w-full min-w-[480px] text-left text-[12px]">
           <thead className="sticky top-0 bg-(--color-panel-soft) text-(--color-ink-faint)">
             <tr>
               <th className="px-3 py-2 font-semibold">Data/Hora</th>
