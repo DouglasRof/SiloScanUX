@@ -103,6 +103,14 @@ export function ChevronDownIcon() {
   )
 }
 
+export function ChevronLeftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor" className="h-3.5 w-3.5">
+      <path d="M14.5 6 9 12l5.5 6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function PlusIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor" className="h-4 w-4">
@@ -124,6 +132,53 @@ export function ChartIcon() {
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" stroke="currentColor" className="h-5 w-5">
       <path d="M4.5 4.5v14a1 1 0 0 0 1 1h14" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M7.5 16 11 11.5l3 2.5 4.5-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" stroke="currentColor" className="h-5 w-5">
+      <path d="M12 3.5 19.5 6.5V11.5C19.5 16 16.5 19.5 12 21C7.5 19.5 4.5 16 4.5 11.5V6.5L12 3.5Z" strokeLinejoin="round" />
+      <path d="M9 12l2 2 4-4.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function KeyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" stroke="currentColor" className="h-5 w-5">
+      <circle cx="8" cy="8" r="4" />
+      <path d="M11 11 20 20M20 20l-2.5-.2M20 20l.2-2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function BuildingIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" stroke="currentColor" className="h-5 w-5">
+      <rect x="4.5" y="3.5" width="9" height="17" rx="1" />
+      <rect x="13.5" y="9.5" width="6" height="11" rx="1" />
+      <path d="M7.5 7.5h3M7.5 11h3M7.5 14.5h3M16 13h1M16 16.5h1" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function UsersIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" stroke="currentColor" className="h-5 w-5">
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" strokeLinecap="round" />
+      <path d="M15.5 6.2a3 3 0 0 1 0 5.7M18 19a5 5 0 0 0-3.5-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function PencilIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" stroke="currentColor" className="h-3.5 w-3.5">
+      <path d="M15.5 4.5 19.5 8.5 8 20H4v-4L15.5 4.5Z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13.5 6.5 17.5 10.5" strokeLinecap="round" />
     </svg>
   )
 }

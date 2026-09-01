@@ -2,6 +2,19 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- Aplica a classe "dark" antes do primeiro paint, sincronizado com
+         STORAGE_KEY em src/hooks/useTheme.ts — sem isso, o app carrega sempre
+         no tema claro por um instante (o toggle só roda depois, num useEffect
+         do React) antes de trocar pro tema real do usuário. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('siloscanux-theme')
+          var dark = stored === 'dark' || (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.classList.toggle('dark', dark)
+        } catch (e) {}
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

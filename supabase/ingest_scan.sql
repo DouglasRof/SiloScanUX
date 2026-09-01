@@ -18,7 +18,7 @@
 -- dispositivos. Suficiente enquanto for um sensor de teste; revisar quando tiver
 -- mais de um sensor em campo.
 
-create table public.device_api_keys (
+create table if not exists public.device_api_keys (
   id uuid primary key default gen_random_uuid(),
   label text not null,
   api_key text not null unique,

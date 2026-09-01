@@ -13,6 +13,38 @@ export interface SiloDimensions {
 export interface SiloSummary {
   id: string
   nome: string
+  propriedadeId: string
+}
+
+/** Lightweight entry for the property switcher. */
+export interface PropertySummary {
+  id: string
+  nome: string
+}
+
+export type UserRole = 'user' | 'admin'
+
+/** Row shape returned by the `admin_list_users` RPC — back office only. */
+export interface AdminUserRow {
+  id: string
+  fullName: string | null
+  username: string | null
+  /** Troca de username solicitada, aguardando aprovação — null quando não há nenhuma pendente. */
+  pendingUsername: string | null
+  email: string | null
+  role: UserRole
+  blocked: boolean
+  createdAt: string
+}
+
+/** Row shape for a device API key — back office only. `apiKey` only comes back
+ * from the server right after creation; listed keys never expose it again. */
+export interface DeviceApiKeyRow {
+  id: string
+  label: string
+  apiKey?: string
+  createdAt: string
+  revokedAt: string | null
 }
 
 export interface StandardSiloModel extends SiloDimensions {

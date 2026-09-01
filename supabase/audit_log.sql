@@ -13,7 +13,7 @@
 -- exige auth.uid() = user_id), mas a linha continua existindo para fins de
 -- auditoria interna, se um dia isso for exigido.
 
-create table public.audit_log (
+create table if not exists public.audit_log (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   action text not null,
@@ -23,17 +23,18 @@ create table public.audit_log (
   created_at timestamptz not null default now()
 );
 
-create index audit_log_user_id_created_at_idx on public.audit_log (user_id, created_at desc);
+create index if not exists audit_log_user_id_created_at_idx on public.audit_log (user_id, created_at desc);
 
 alter table public.audit_log enable row level security;
 
+drop policy if exists "usuário vê o próprio log de auditoria" on public.audit_log;
 create policy "usuário vê o próprio log de auditoria"
   on public.audit_log for select
   using (user_id = auth.uid());
 -- Sem policy de insert/update/delete pública — só as funções abaixo (security
 -- definer, disparadas por trigger) escrevem aqui.
 
-create function public.log_silo_created()
+create or replace function public.log_silo_created()
 returns trigger
 language plpgsql
 security definer set search_path = public
@@ -45,11 +46,12 @@ begin
 end;
 $$;
 
+drop trigger if exists on_silo_created on public.silos;
 create trigger on_silo_created
   after insert on public.silos
   for each row execute procedure public.log_silo_created();
 
-create function public.log_silo_deleted()
+create or replace function public.log_silo_deleted()
 returns trigger
 language plpgsql
 security definer set search_path = public
@@ -61,6 +63,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_silo_deleted on public.silos;
 create trigger on_silo_deleted
   after delete on public.silos
   for each row execute procedure public.log_silo_deleted();

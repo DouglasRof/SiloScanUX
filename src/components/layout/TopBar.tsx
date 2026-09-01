@@ -1,21 +1,41 @@
 import { LogoutIcon, MoonIcon, SiloLogo, SunIcon, UserIcon } from '../icons'
 import type { Theme } from '../../hooks/useTheme'
-import type { SiloSummary } from '../../types/silo'
-import { SiloSwitcher } from './SiloSwitcher'
+import type { PropertySummary, SiloSummary } from '../../types/silo'
+import { PropertySiloSwitcher } from './PropertySiloSwitcher'
 
 interface TopBarProps {
+  properties: PropertySummary[]
   silos: SiloSummary[]
+  activePropertyId: string | null
   activeSiloId: string | null
+  onSwitchProperty: (id: string) => void
   onSwitchSilo: (id: string) => void
+  onCreateProperty: () => void
   onCreateSilo: () => void
-  onDeleteSilo: (id: string) => void
+  onDeleteSilo: (id: string) => Promise<boolean>
+  onRenameProperty: (propertyId: string, currentName: string) => void
   theme: Theme
   onToggleTheme: () => void
   onOpenAccount: () => void
   onLogout: () => void
 }
 
-export function TopBar({ silos, activeSiloId, onSwitchSilo, onCreateSilo, onDeleteSilo, theme, onToggleTheme, onOpenAccount, onLogout }: TopBarProps) {
+export function TopBar({
+  properties,
+  silos,
+  activePropertyId,
+  activeSiloId,
+  onSwitchProperty,
+  onSwitchSilo,
+  onCreateProperty,
+  onCreateSilo,
+  onDeleteSilo,
+  onRenameProperty,
+  theme,
+  onToggleTheme,
+  onOpenAccount,
+  onLogout,
+}: TopBarProps) {
   return (
     <header className="relative z-30 flex h-14 shrink-0 items-center justify-between border-b border-(--color-line) bg-(--color-panel) px-3 sm:px-5">
       <div className="flex items-center gap-2.5">
@@ -24,7 +44,18 @@ export function TopBar({ silos, activeSiloId, onSwitchSilo, onCreateSilo, onDele
         <span className="hidden rounded-full bg-(--color-brand-soft) px-2 py-0.5 text-[11px] font-semibold text-(--color-brand-dark) sm:inline">v{__APP_VERSION__}</span>
       </div>
 
-      <SiloSwitcher silos={silos} activeSiloId={activeSiloId} onSwitch={onSwitchSilo} onCreate={onCreateSilo} onDelete={onDeleteSilo} />
+      <PropertySiloSwitcher
+        properties={properties}
+        silos={silos}
+        activePropertyId={activePropertyId}
+        activeSiloId={activeSiloId}
+        onSwitchProperty={onSwitchProperty}
+        onSwitchSilo={onSwitchSilo}
+        onCreateProperty={onCreateProperty}
+        onCreateSilo={onCreateSilo}
+        onDeleteSilo={onDeleteSilo}
+        onRenameProperty={onRenameProperty}
+      />
 
       <div className="flex items-center gap-1">
         <button
