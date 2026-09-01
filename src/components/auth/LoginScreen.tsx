@@ -1,10 +1,14 @@
 import { useState, type FormEvent } from 'react'
 import logoUrl from '../../assets/inovagrotec-logo.jpg'
-import { TEXT_INPUT_CLASS } from '../../lib/formStyles'
 import { supabase } from '../../lib/supabaseClient'
 import { isValidUsername, resolveLoginEmail } from '../../lib/auth'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { Label } from '../ui/label'
+import { Checkbox } from '../ui/checkbox'
 
-const inputClass = `${TEXT_INPUT_CLASS} px-3 py-2`
+const labelClass = 'text-[11px] font-bold tracking-wide text-(--color-ink-faint)'
+const submitButtonClass = 'mt-1.5 h-auto rounded-xl py-2.5 text-[14px] font-bold'
 
 function authErrorMessage(message: string): string {
   if (message.includes('Invalid login credentials')) return 'E-mail (ou ID de usuário) e senha não coincidem.'
@@ -48,37 +52,41 @@ function LoginForm({ onSwitchToSignup }: { onSwitchToSignup: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3.5">
-      <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">E-MAIL OU ID DE USUÁRIO</span>
-        <input
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="login-identifier" className={labelClass}>
+          E-MAIL OU ID DE USUÁRIO
+        </Label>
+        <Input
+          id="login-identifier"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
           placeholder="voce@cooperativa.com.br ou joao.silva"
-          className={inputClass}
           autoComplete="username"
         />
-      </label>
+      </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">SENHA</span>
-        <input
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="login-password" className={labelClass}>
+          SENHA
+        </Label>
+        <Input
+          id="login-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"
-          className={inputClass}
           autoComplete="current-password"
         />
-      </label>
+      </div>
 
       <div className="flex items-center justify-between text-[12px]">
-        <label className="flex items-center gap-1.5 text-(--color-ink-soft)">
-          <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="accent-(--color-brand)" />
+        <Label htmlFor="remember-me" className="text-(--color-ink-soft)">
+          <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(checked) => setRememberMe(checked === true)} />
           Lembrar de mim
-        </label>
-        <button type="button" disabled aria-disabled="true" title="Ainda não disponível" className="cursor-not-allowed font-semibold text-(--color-ink-faint)">
+        </Label>
+        <Button type="button" variant="link" disabled aria-disabled="true" title="Ainda não disponível" className="h-auto p-0 text-(--color-ink-faint)">
           Esqueceu a senha?
-        </button>
+        </Button>
       </div>
 
       {error && (
@@ -87,19 +95,15 @@ function LoginForm({ onSwitchToSignup }: { onSwitchToSignup: () => void }) {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="mt-1.5 rounded-xl bg-(--color-brand) py-2.5 text-[14px] font-bold text-white transition-colors hover:brightness-95 disabled:cursor-wait disabled:opacity-70"
-      >
+      <Button type="submit" disabled={isSubmitting} className={submitButtonClass}>
         {isSubmitting ? 'Entrando…' : 'Entrar'}
-      </button>
+      </Button>
 
       <p className="text-center text-[12px] text-(--color-ink-faint)">
         Não tem uma conta?{' '}
-        <button type="button" onClick={onSwitchToSignup} className="font-semibold text-(--color-brand)">
+        <Button type="button" variant="link" onClick={onSwitchToSignup} className="h-auto p-0 text-[12px] font-semibold">
           Criar conta
-        </button>
+        </Button>
       </p>
     </form>
   )
@@ -161,64 +165,74 @@ function SignupForm({ onDone, onSwitchToLogin }: { onDone: (message: string) => 
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3.5">
-      <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">NOME COMPLETO</span>
-        <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome" className={inputClass} autoComplete="name" required />
-      </label>
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="signup-fullname" className={labelClass}>
+          NOME COMPLETO
+        </Label>
+        <Input id="signup-fullname" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome" autoComplete="name" required />
+      </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">ID DE USUÁRIO</span>
-        <input
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="signup-username" className={labelClass}>
+          ID DE USUÁRIO
+        </Label>
+        <Input
+          id="signup-username"
           value={username}
           onChange={(e) => setUsername(e.target.value.toLowerCase())}
           placeholder="joao.silva"
-          className={inputClass}
           autoComplete="username"
           required
         />
         <span className={`text-[11px] ${usernameTouched && !usernameValid ? 'text-(--color-danger)' : 'text-(--color-ink-faint)'}`}>
           3–24 caracteres: letras minúsculas, números, ponto ou underscore. Usado como alternativa ao e-mail para entrar.
         </span>
-      </label>
+      </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">E-MAIL</span>
-        <input
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="signup-email" className={labelClass}>
+          E-MAIL
+        </Label>
+        <Input
+          id="signup-email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="voce@cooperativa.com.br"
-          className={inputClass}
           autoComplete="email"
           required
         />
-      </label>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1">
-          <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">SENHA</span>
-          <input
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="signup-password" className={labelClass}>
+            SENHA
+          </Label>
+          <Input
+            id="signup-password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className={inputClass}
             autoComplete="new-password"
             required
           />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">CONFIRMAR</span>
-          <input
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="signup-confirm-password" className={labelClass}>
+            CONFIRMAR
+          </Label>
+          <Input
+            id="signup-confirm-password"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="••••••••"
-            className={inputClass}
             autoComplete="new-password"
             required
           />
-        </label>
+        </div>
       </div>
 
       {error && (
@@ -227,19 +241,15 @@ function SignupForm({ onDone, onSwitchToLogin }: { onDone: (message: string) => 
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="mt-1.5 rounded-xl bg-(--color-brand) py-2.5 text-[14px] font-bold text-white transition-colors hover:brightness-95 disabled:cursor-wait disabled:opacity-70"
-      >
+      <Button type="submit" disabled={isSubmitting} className={submitButtonClass}>
         {isSubmitting ? 'Criando conta…' : 'Criar conta'}
-      </button>
+      </Button>
 
       <p className="text-center text-[12px] text-(--color-ink-faint)">
         Já tem uma conta?{' '}
-        <button type="button" onClick={onSwitchToLogin} className="font-semibold text-(--color-brand)">
+        <Button type="button" variant="link" onClick={onSwitchToLogin} className="h-auto p-0 text-[12px] font-semibold">
           Entrar
-        </button>
+        </Button>
       </p>
     </form>
   )
@@ -256,7 +266,7 @@ export function LoginScreen() {
 
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-linear-to-b from-(--color-app-from) to-(--color-app-to) p-4">
-      <div className="w-full max-w-[380px] rounded-2xl border border-(--color-line) bg-(--color-panel) p-8 shadow-[0_8px_30px_rgba(16,40,60,0.16)]">
+      <div className="glass-panel w-full max-w-[380px] rounded-3xl p-8">
         <div className="flex flex-col items-center gap-2">
           {/* Zoomed slightly past 100% to crop the stray 1-2px border on the source file's
               right/bottom edges (a leftover from however the original was captured). */}
@@ -272,9 +282,9 @@ export function LoginScreen() {
         {signupMessage ? (
           <div className="mt-6 flex flex-col items-center gap-3 text-center">
             <p className="text-[13px] font-medium text-(--color-ink)">{signupMessage}</p>
-            <button onClick={() => switchMode('login')} className="text-[13px] font-semibold text-(--color-brand)">
+            <Button variant="link" onClick={() => switchMode('login')} className="h-auto p-0 text-[13px] font-semibold">
               Voltar para o login
-            </button>
+            </Button>
           </div>
         ) : mode === 'login' ? (
           <LoginForm onSwitchToSignup={() => switchMode('signup')} />

@@ -1,10 +1,10 @@
 export function SiloLogo() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
-      <rect x="3" y="9" width="14" height="11" rx="1.4" fill="var(--color-brand)" opacity="0.15" />
-      <path d="M3 9 10 4l7 5" stroke="var(--color-brand)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <rect x="3" y="9" width="14" height="11" rx="1.4" stroke="var(--color-brand)" strokeWidth="1.8" fill="none" />
-      <path d="M6.5 13.5h7" stroke="var(--color-brand)" strokeWidth="1.6" strokeLinecap="round" />
+      <rect x="3" y="9" width="14" height="11" rx="1.4" fill="var(--color-navy)" opacity="0.15" />
+      <path d="M3 9 10 4l7 5" stroke="var(--color-navy)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <rect x="3" y="9" width="14" height="11" rx="1.4" stroke="var(--color-navy)" strokeWidth="1.8" fill="none" />
+      <path d="M6.5 13.5h7" stroke="var(--color-navy)" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   )
 }

@@ -1,7 +1,7 @@
-import { useState } from 'react'
 import { AdminUsersTab } from './AdminUsersTab'
 import { AdminPropertiesTab } from './AdminPropertiesTab'
 import { AdminDeviceKeysTab } from './AdminDeviceKeysTab'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 
 const TABS = [
   { id: 'usuarios', label: 'Usuários' },
@@ -9,11 +9,7 @@ const TABS = [
   { id: 'chaves', label: 'Chaves de Sensor' },
 ] as const
 
-type TabId = (typeof TABS)[number]['id']
-
 export function AdminBackOffice() {
-  const [tab, setTab] = useState<TabId>('usuarios')
-
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto bg-(--color-panel-soft) p-4 sm:p-6">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
@@ -22,25 +18,29 @@ export function AdminBackOffice() {
           <p className="text-[12px] text-(--color-ink-faint)">Funções administrativas — visíveis só para contas com papel "admin".</p>
         </div>
 
-        <div className="flex gap-1 rounded-lg bg-(--color-panel) p-1 shadow-sm">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex-1 rounded-lg py-1.5 text-[12px] font-bold transition-colors ${
-                tab === t.id ? 'bg-(--color-brand) text-white' : 'text-(--color-ink-soft) hover:bg-(--color-panel-soft)'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <Tabs defaultValue="usuarios">
+          <TabsList className="h-auto w-full gap-1 bg-(--color-panel) p-1 shadow-sm">
+            {TABS.map((t) => (
+              <TabsTrigger
+                key={t.id}
+                value={t.id}
+                className="h-auto flex-1 rounded-lg py-1.5 text-[12px] font-bold text-(--color-ink-soft) data-active:bg-(--color-navy) data-active:text-white data-active:shadow-none"
+              >
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <div className="rounded-2xl border border-(--color-line) bg-(--color-panel) p-4">
-          {tab === 'usuarios' && <AdminUsersTab />}
-          {tab === 'propriedades' && <AdminPropertiesTab />}
-          {tab === 'chaves' && <AdminDeviceKeysTab />}
-        </div>
+          <TabsContent value="usuarios" className="rounded-2xl border border-(--color-line) bg-(--color-panel) p-4">
+            <AdminUsersTab />
+          </TabsContent>
+          <TabsContent value="propriedades" className="rounded-2xl border border-(--color-line) bg-(--color-panel) p-4">
+            <AdminPropertiesTab />
+          </TabsContent>
+          <TabsContent value="chaves" className="rounded-2xl border border-(--color-line) bg-(--color-panel) p-4">
+            <AdminDeviceKeysTab />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

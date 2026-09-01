@@ -13,7 +13,7 @@ export function SiloCanvas() {
   const camDistance = dims.diameterM * 2.3 + dims.cylinderHeightM * 0.35 + legClearance * 1.4
 
   return (
-    <div className="relative h-full w-full bg-linear-to-b from-(--color-app-from) to-(--color-app-to)">
+    <div className="relative h-full w-full bg-(--color-panel)">
       <Canvas shadows dpr={[1, 2]}>
         <Suspense fallback={null}>
           {/* Keyed on the model, not on `dims` itself, so orbiting/zooming survives fine custom-dimension

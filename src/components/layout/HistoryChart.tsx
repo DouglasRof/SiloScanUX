@@ -36,13 +36,13 @@ export function HistoryChart({ history, windowMs = 24 * 3_600_000, width = 260, 
     <svg viewBox={`0 0 ${width} ${height}`} className="h-14 w-full overflow-visible">
       <defs>
         <linearGradient id="historyFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-brand)" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="var(--color-brand)" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--color-navy)" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="var(--color-navy)" stopOpacity="0" />
         </linearGradient>
       </defs>
       {areaPath && <path d={areaPath} fill="url(#historyFill)" />}
-      {path && <path d={path} fill="none" stroke="var(--color-brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
-      {lastPoint && <circle cx={lastPoint[0]} cy={lastPoint[1]} r="3" fill="var(--color-brand)" />}
+      {path && <path d={path} fill="none" stroke="var(--color-navy)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+      {lastPoint && <circle cx={lastPoint[0]} cy={lastPoint[1]} r="3" fill="var(--color-navy)" />}
     </svg>
   )
 }

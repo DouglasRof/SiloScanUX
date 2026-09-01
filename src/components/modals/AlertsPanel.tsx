@@ -5,7 +5,7 @@ import { Modal } from './Modal'
 const SEVERITY_STYLE: Record<string, string> = {
   critical: 'border-(--color-danger) bg-(--color-danger-soft) text-(--color-danger)',
   warning: 'border-(--color-warn) bg-(--color-warn-soft) text-(--color-warn)',
-  info: 'border-(--color-brand) bg-(--color-brand-soft) text-(--color-brand-dark)',
+  info: 'border-(--color-navy) bg-(--color-navy-soft) text-(--color-navy)',
 }
 
 export function AlertsPanel({ onClose }: { onClose: () => void }) {

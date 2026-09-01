@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { DeviceApiKeyRow } from '../../types/silo'
 import { adminCreateDeviceKey, adminListDeviceKeys, adminRevokeDeviceKey } from '../../lib/admin'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { Badge } from '../ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 
 export function AdminDeviceKeysTab() {
   const [keys, setKeys] = useState<DeviceApiKeyRow[] | null>(null)
@@ -39,19 +43,10 @@ export function AdminDeviceKeysTab() {
       <div className="rounded-xl border border-(--color-line) bg-(--color-panel-soft) p-3.5">
         <p className="mb-2 text-[11px] font-bold tracking-wide text-(--color-ink-faint)">NOVA CHAVE</p>
         <div className="flex gap-2">
-          <input
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder="Rótulo (ex: silo-galpao-2)"
-            className="flex-1 rounded-lg border border-(--color-line) bg-(--color-panel) px-2.5 py-1.5 text-sm text-(--color-ink) outline-none focus:border-(--color-brand)"
-          />
-          <button
-            onClick={handleCreate}
-            disabled={!label.trim() || creating}
-            className="rounded-lg bg-(--color-brand) px-3 py-1.5 text-xs font-bold text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Rótulo (ex: silo-galpao-2)" className="flex-1 bg-(--color-panel)" />
+          <Button onClick={handleCreate} disabled={!label.trim() || creating} className="h-auto shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold">
             {creating ? 'Criando…' : 'Criar chave'}
-          </button>
+          </Button>
         </div>
         {justCreated && (
           <div className="mt-3 rounded-lg border border-(--color-warn) bg-(--color-warn-soft) p-2.5">
@@ -67,43 +62,44 @@ export function AdminDeviceKeysTab() {
         <p className="text-sm text-(--color-ink-faint)">Nenhuma chave criada ainda.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-(--color-line)">
-          <table className="w-full min-w-[480px] text-left text-[13px]">
-            <thead className="bg-(--color-panel-soft) text-[11px] font-bold uppercase tracking-wide text-(--color-ink-faint)">
-              <tr>
-                <th className="px-3 py-2">Rótulo</th>
-                <th className="px-3 py-2">Criada em</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="min-w-[480px] text-[13px]">
+            <TableHeader className="bg-(--color-panel-soft) text-[11px] font-bold uppercase tracking-wide text-(--color-ink-faint)">
+              <TableRow className="border-0 hover:bg-transparent">
+                <TableHead className="h-auto px-3 py-2 text-(--color-ink-faint)">Rótulo</TableHead>
+                <TableHead className="h-auto px-3 py-2 text-(--color-ink-faint)">Criada em</TableHead>
+                <TableHead className="h-auto px-3 py-2 text-(--color-ink-faint)">Status</TableHead>
+                <TableHead className="h-auto px-3 py-2 text-(--color-ink-faint)">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {keys.map((k) => (
-                <tr key={k.id} className="border-t border-(--color-line)">
-                  <td className="px-3 py-2 font-medium text-(--color-ink)">{k.label}</td>
-                  <td className="px-3 py-2 text-(--color-ink-soft)">{new Date(k.createdAt).toLocaleDateString('pt-BR')}</td>
-                  <td className="px-3 py-2">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                <TableRow key={k.id} className="border-t border-(--color-line) hover:bg-transparent">
+                  <TableCell className="px-3 py-2 font-medium text-(--color-ink)">{k.label}</TableCell>
+                  <TableCell className="px-3 py-2 text-(--color-ink-soft)">{new Date(k.createdAt).toLocaleDateString('pt-BR')}</TableCell>
+                  <TableCell className="px-3 py-2">
+                    <Badge
+                      className={`h-auto rounded-full px-2 py-0.5 text-[11px] font-bold ${
                         k.revokedAt ? 'bg-(--color-danger-soft) text-(--color-danger)' : 'bg-(--color-good-soft) text-(--color-good)'
                       }`}
                     >
                       {k.revokedAt ? 'Revogada' : 'Ativa'}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-3 py-2">
                     {!k.revokedAt && (
-                      <button
+                      <Button
+                        variant="outline"
                         onClick={() => handleRevoke(k.id)}
-                        className="rounded-lg border border-(--color-line) px-2 py-1 text-[11px] font-semibold text-(--color-ink-soft) hover:bg-(--color-danger-soft) hover:text-(--color-danger)"
+                        className="h-auto rounded-lg px-2 py-1 text-[11px] font-semibold text-(--color-ink-soft) hover:bg-(--color-danger-soft) hover:text-(--color-danger)"
                       >
                         Revogar
-                      </button>
+                      </Button>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
       <p className="text-[11px] text-(--color-ink-faint)">

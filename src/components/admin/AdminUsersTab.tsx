@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { AdminUserRow } from '../../types/silo'
 import { adminApproveUsername, adminListUsers, adminRejectUsername, adminSendPasswordReset, adminSetUserBlocked, adminSetUserRole } from '../../lib/admin'
+import { Button } from '../ui/button'
+import { Badge } from '../ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 
 export function AdminUsersTab() {
   const [users, setUsers] = useState<AdminUserRow[] | null>(null)
@@ -49,93 +52,96 @@ export function AdminUsersTab() {
       )}
 
       <div className="overflow-x-auto rounded-xl border border-(--color-line)">
-        <table className="w-full min-w-[760px] text-left text-[13px]">
-          <thead className="bg-(--color-panel-soft) text-[11px] font-bold uppercase tracking-wide text-(--color-ink-faint)">
-            <tr>
-              <th className="px-3 py-2">Nome</th>
-              <th className="px-3 py-2">ID de usuário</th>
-              <th className="px-3 py-2">E-mail</th>
-              <th className="px-3 py-2">Papel</th>
-              <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-[760px] text-[13px]">
+          <TableHeader className="bg-(--color-panel-soft) text-[11px] font-bold uppercase tracking-wide text-(--color-ink-faint)">
+            <TableRow className="border-0 hover:bg-transparent">
+              <TableHead className="h-auto px-3 py-2 text-(--color-ink-faint)">Nome</TableHead>
+              <TableHead className="h-auto px-3 py-2 text-(--color-ink-faint)">ID de usuário</TableHead>
+              <TableHead className="h-auto px-3 py-2 text-(--color-ink-faint)">E-mail</TableHead>
+              <TableHead className="h-auto px-3 py-2 text-(--color-ink-faint)">Papel</TableHead>
+              <TableHead className="h-auto px-3 py-2 text-(--color-ink-faint)">Status</TableHead>
+              <TableHead className="h-auto px-3 py-2 text-(--color-ink-faint)">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {users.map((u) => (
-              <tr key={u.id} className="border-t border-(--color-line)">
-                <td className="px-3 py-2 font-medium text-(--color-ink)">{u.fullName ?? '—'}</td>
-                <td className="px-3 py-2 text-(--color-ink-soft)">
+              <TableRow key={u.id} className="border-t border-(--color-line) hover:bg-transparent">
+                <TableCell className="px-3 py-2 font-medium text-(--color-ink)">{u.fullName ?? '—'}</TableCell>
+                <TableCell className="px-3 py-2 text-(--color-ink-soft)">
                   {u.username ?? '—'}
                   {u.pendingUsername && (
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-full bg-(--color-warn-soft) px-2 py-0.5 text-[11px] font-bold text-(--color-warn)">
+                      <Badge className="h-auto rounded-full bg-(--color-warn-soft) px-2 py-0.5 text-[11px] font-bold text-(--color-warn)">
                         → {u.pendingUsername} (pendente)
-                      </span>
-                      <button
+                      </Badge>
+                      <Button
                         disabled={busyId === u.id}
                         onClick={() => withBusy(u.id, () => adminApproveUsername(u.id), 'Troca de ID de usuário aprovada.')}
-                        className="rounded-md bg-(--color-good-soft) px-1.5 py-0.5 text-[11px] font-bold text-(--color-good) disabled:opacity-50"
+                        className="h-auto rounded-md bg-(--color-good-soft) px-1.5 py-0.5 text-[11px] font-bold text-(--color-good) hover:bg-(--color-good-soft) disabled:opacity-50"
                       >
                         Aprovar
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         disabled={busyId === u.id}
                         onClick={() => withBusy(u.id, () => adminRejectUsername(u.id), 'Troca de ID de usuário rejeitada.')}
-                        className="rounded-md bg-(--color-danger-soft) px-1.5 py-0.5 text-[11px] font-bold text-(--color-danger) disabled:opacity-50"
+                        className="h-auto rounded-md bg-(--color-danger-soft) px-1.5 py-0.5 text-[11px] font-bold text-(--color-danger) hover:bg-(--color-danger-soft) disabled:opacity-50"
                       >
                         Rejeitar
-                      </button>
+                      </Button>
                     </div>
                   )}
-                </td>
-                <td className="px-3 py-2 text-(--color-ink-soft)">{u.email ?? '—'}</td>
-                <td className="px-3 py-2">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                      u.role === 'admin' ? 'bg-(--color-brand-soft) text-(--color-brand-dark)' : 'bg-(--color-panel-soft) text-(--color-ink-faint)'
+                </TableCell>
+                <TableCell className="px-3 py-2 text-(--color-ink-soft)">{u.email ?? '—'}</TableCell>
+                <TableCell className="px-3 py-2">
+                  <Badge
+                    className={`h-auto rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                      u.role === 'admin' ? 'bg-(--color-navy-soft) text-(--color-navy)' : 'bg-(--color-panel-soft) text-(--color-ink-faint)'
                     }`}
                   >
                     {u.role === 'admin' ? 'Admin' : 'Usuário'}
-                  </span>
-                </td>
-                <td className="px-3 py-2">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  </Badge>
+                </TableCell>
+                <TableCell className="px-3 py-2">
+                  <Badge
+                    className={`h-auto rounded-full px-2 py-0.5 text-[11px] font-bold ${
                       u.blocked ? 'bg-(--color-danger-soft) text-(--color-danger)' : 'bg-(--color-good-soft) text-(--color-good)'
                     }`}
                   >
                     {u.blocked ? 'Bloqueado' : 'Ativo'}
-                  </span>
-                </td>
-                <td className="px-3 py-2">
+                  </Badge>
+                </TableCell>
+                <TableCell className="px-3 py-2">
                   <div className="flex flex-wrap gap-1.5">
-                    <button
+                    <Button
+                      variant="outline"
                       disabled={busyId === u.id}
                       onClick={() => withBusy(u.id, () => adminSetUserRole(u.id, u.role === 'admin' ? 'user' : 'admin'), 'Papel atualizado.')}
-                      className="rounded-lg border border-(--color-line) px-2 py-1 text-[11px] font-semibold text-(--color-ink-soft) hover:bg-(--color-panel-soft) disabled:opacity-50"
+                      className="h-auto rounded-lg px-2 py-1 text-[11px] font-semibold text-(--color-ink-soft)"
                     >
                       {u.role === 'admin' ? 'Remover admin' : 'Tornar admin'}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="outline"
                       disabled={busyId === u.id}
                       onClick={() => withBusy(u.id, () => adminSetUserBlocked(u.id, !u.blocked), u.blocked ? 'Usuário desbloqueado.' : 'Usuário bloqueado.')}
-                      className="rounded-lg border border-(--color-line) px-2 py-1 text-[11px] font-semibold text-(--color-ink-soft) hover:bg-(--color-panel-soft) disabled:opacity-50"
+                      className="h-auto rounded-lg px-2 py-1 text-[11px] font-semibold text-(--color-ink-soft)"
                     >
                       {u.blocked ? 'Desbloquear' : 'Bloquear'}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="outline"
                       disabled={busyId === u.id || !u.email}
                       onClick={() => withBusy(u.id, () => adminSendPasswordReset(u.email as string), 'E-mail de redefinição enviado.')}
-                      className="rounded-lg border border-(--color-line) px-2 py-1 text-[11px] font-semibold text-(--color-ink-soft) hover:bg-(--color-panel-soft) disabled:opacity-50"
+                      className="h-auto rounded-lg px-2 py-1 text-[11px] font-semibold text-(--color-ink-soft)"
                     >
                       Redefinir senha
-                    </button>
+                    </Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <p className="text-[11px] text-(--color-ink-faint)">
         Definir o ID de usuário por primeira vez é imediato; trocar um que já existe fica pendente aqui até aprovar ou rejeitar.
