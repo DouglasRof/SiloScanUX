@@ -5,9 +5,11 @@ import type {
   HistorySample,
   LevelStatus,
   LidarScan,
+  PropertySummary,
   RawLidarScan,
   SiloDimensions,
   SiloSummary,
+  UserRole,
   VolumeResult,
 } from '../types/silo'
 import { CUSTOM_SILO_ID, STANDARD_SILOS } from '../data/standardSilos'
@@ -59,9 +61,14 @@ function buildAlerts(volume: VolumeResult, status: LevelStatus, temperatureC: nu
 
 interface SiloState {
   userId: string | null
+  role: UserRole
+  blocked: boolean
+  properties: PropertySummary[]
+  propertyId: string | null
   silos: SiloSummary[]
   siloId: string | null
   configLoaded: boolean
+  configError: string | null
   lastHistoryPersistAt: number
   siloName: string
   standardId: string
@@ -95,7 +102,11 @@ interface SiloState {
   saveSiloConfig: () => Promise<boolean>
   switchToSilo: (siloId: string) => Promise<void>
   createSiloWithConfig: (config: { nome: string; standardId: string; dims: SiloDimensions; grainId: string }) => Promise<boolean>
-  deleteSilo: (siloId: string) => Promise<void>
+  deleteSilo: (siloId: string) => Promise<boolean>
+  switchProperty: (propertyId: string) => Promise<void>
+  createProperty: (nome: string) => Promise<boolean>
+  renameProperty: (propertyId: string, nome: string) => Promise<boolean>
+  deleteProperty: (propertyId: string) => Promise<void>
   exportMyData: () => Promise<Record<string, unknown> | null>
   deleteMyAccount: () => Promise<boolean>
   resetConfig: () => void
@@ -137,12 +148,22 @@ interface SiloRow {
   standard_id: string
   dims: SiloDimensions
   grain_id: string
+  propriedade_id: string
 }
 
-async function insertDefaultSilo(userId: string, nome: string): Promise<SiloRow | null> {
+async function insertDefaultProperty(userId: string, nome: string): Promise<PropertySummary | null> {
+  const { data, error } = await supabase.from('propriedades').insert({ user_id: userId, nome }).select().single()
+  if (error || !data) {
+    console.error('Falha ao criar propriedade padrão:', error)
+    return null
+  }
+  return { id: data.id, nome: data.nome }
+}
+
+async function insertDefaultSilo(userId: string, propriedadeId: string, nome: string): Promise<SiloRow | null> {
   const { data, error } = await supabase
     .from('silos')
-    .insert({ user_id: userId, nome, standard_id: initialDims.id, dims: initialDims, grain_id: initialGrain.id })
+    .insert({ user_id: userId, propriedade_id: propriedadeId, nome, standard_id: initialDims.id, dims: initialDims, grain_id: initialGrain.id })
     .select()
     .single()
 
@@ -178,17 +199,33 @@ async function loadHistoryAndLevel(siloId: string): Promise<{ history: HistorySa
   return { history, levelPercent: history[history.length - 1].levelPercent }
 }
 
-/** Makes `row` the active/working silo: loads its persisted history (if any) to resume
- * roughly where it left off, instead of always restarting every silo at a fixed level. */
-async function applySiloRow(row: SiloRow, set: (partial: Partial<SiloState>) => void, get: () => SiloState) {
+// Token de "última intenção ganha": cada troca/criação de silo ou propriedade
+// (e o load inicial de login, e o logout) chama beginSwitch() e guarda o número
+// que ela devolve. Depois de cada await, comparar esse número com switchSeq diz
+// se essa chamada ainda é a mais recente — se não for, ela para sem aplicar seu
+// resultado, em vez de sobrescrever silenciosamente o que uma chamada mais nova
+// (um clique seguinte, uma troca de propriedade, um logout) já deixou no estado.
+let switchSeq = 0
+function beginSwitch(): number {
+  return ++switchSeq
+}
+
+/** Makes `row` the active/working silo (and its property the active property): loads its
+ * persisted history (if any) to resume roughly where it left off, instead of always
+ * restarting every silo at a fixed level. `seq` é o token de beginSwitch() do chamador —
+ * se uma chamada mais recente já começou, esta desiste em vez de sobrescrever o estado. */
+async function applySiloRow(row: SiloRow, set: (partial: Partial<SiloState>) => void, get: () => SiloState, seq: number) {
   const dims = row.dims
   const grain = GRAIN_PROFILES.find((g) => g.id === row.grain_id) ?? get().grain
   const { history: persisted, levelPercent } = await loadHistoryAndLevel(row.id)
+  if (seq !== switchSeq) return
+
   const startLevel = Number.isFinite(levelPercent) ? levelPercent : 50
   const fresh = freshState(dims, grain, startLevel)
   const history = persisted.length > 0 ? [...persisted, fresh.history[0]] : fresh.history
 
   set({
+    propertyId: row.propriedade_id,
     siloId: row.id,
     siloName: row.nome,
     standardId: row.standard_id,
@@ -211,9 +248,14 @@ async function applySiloRow(row: SiloRow, set: (partial: Partial<SiloState>) => 
 
 export const useSiloStore = create<SiloState>((set, get) => ({
   userId: null,
+  role: 'user',
+  blocked: false,
+  properties: [],
+  propertyId: null,
   silos: [],
   siloId: null,
   configLoaded: false,
+  configError: null,
   lastHistoryPersistAt: 0,
   siloName: 'SILO ALIMENTADOR 01',
   standardId: initialDims.id,
@@ -366,46 +408,90 @@ export const useSiloStore = create<SiloState>((set, get) => ({
   },
 
   loadOrCreateSiloConfig: async (userId) => {
-    set({ userId })
-    const { data: rows, error } = await supabase
-      .from('silos')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true })
+    const seq = beginSwitch()
+    set({ userId, configError: null })
 
-    if (error) {
-      console.error('Falha ao carregar os silos do usuário:', error)
+    const { data: profile, error: profileError } = await supabase.from('profiles').select('role, blocked').eq('id', userId).single()
+    if (seq !== switchSeq) return // um load/logout mais recente já começou — desiste
+    if (profileError) console.error('Falha ao carregar perfil:', profileError)
+    set({ role: (profile?.role as UserRole | undefined) ?? 'user', blocked: profile?.blocked ?? false })
+    // Bloqueado: marca como carregado e para aqui. App.tsx confere `blocked` e desloga
+    // a sessão — não faz sentido carregar propriedades/silos de alguém que não deveria
+    // estar entrando.
+    if (profile?.blocked) {
+      set({ configLoaded: true })
       return
     }
 
-    if (rows && rows.length > 0) {
-      set({ silos: rows.map((r) => ({ id: r.id, nome: r.nome })) })
-      await applySiloRow(rows[0] as SiloRow, set, get)
-      return
-    }
+    try {
+      const { data: propRows, error: propError } = await supabase
+        .from('propriedades')
+        .select('id, nome')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true })
 
-    const created = await insertDefaultSilo(userId, 'Silo 1')
-    if (!created) return
-    set({ silos: [{ id: created.id, nome: created.nome }] })
-    await applySiloRow(created, set, get)
+      if (seq !== switchSeq) return
+      if (propError) throw propError
+
+      let properties: PropertySummary[] = propRows ?? []
+      if (properties.length === 0) {
+        const created = await insertDefaultProperty(userId, 'Propriedade 1')
+        if (seq !== switchSeq) return
+        if (!created) throw new Error('Falha ao criar propriedade padrão')
+        properties = [created]
+      }
+      set({ properties })
+
+      const propertyIds = properties.map((p) => p.id)
+      const { data: siloRows, error: siloError } = await supabase
+        .from('silos')
+        .select('id, nome, standard_id, dims, grain_id, propriedade_id')
+        .in('propriedade_id', propertyIds)
+        .order('created_at', { ascending: true })
+
+      if (seq !== switchSeq) return
+      if (siloError) throw siloError
+
+      const silos: SiloSummary[] = (siloRows ?? []).map((r) => ({ id: r.id, nome: r.nome, propriedadeId: r.propriedade_id }))
+      set({ silos })
+
+      const firstPropertyId = properties[0].id
+      let firstSiloRow = (siloRows ?? []).find((r) => r.propriedade_id === firstPropertyId) as SiloRow | undefined
+      if (!firstSiloRow) {
+        const created = await insertDefaultSilo(userId, firstPropertyId, 'Silo 1')
+        if (seq !== switchSeq) return
+        if (!created) throw new Error('Falha ao criar silo padrão')
+        firstSiloRow = created
+        set({ silos: [...get().silos, { id: created.id, nome: created.nome, propriedadeId: firstPropertyId }] })
+      }
+
+      await applySiloRow(firstSiloRow, set, get, seq)
+    } catch (err) {
+      if (seq !== switchSeq) return // não mostra erro de um load que já foi superado
+      console.error('Falha ao carregar configuração de silos:', err)
+      set({ configError: 'Não foi possível carregar seus dados. Verifique sua conexão e tente novamente.' })
+    }
   },
 
   switchToSilo: async (siloId) => {
     if (siloId === get().siloId) return
+    const seq = beginSwitch()
     const { data: row, error } = await supabase.from('silos').select('*').eq('id', siloId).single()
+    if (seq !== switchSeq) return
     if (error || !row) {
       console.error('Falha ao trocar de silo:', error)
       return
     }
-    await applySiloRow(row as SiloRow, set, get)
+    await applySiloRow(row as SiloRow, set, get, seq)
   },
 
   createSiloWithConfig: async (config) => {
-    const { userId } = get()
-    if (!userId) return false
+    const { userId, propertyId } = get()
+    if (!userId || !propertyId) return false
+    const seq = beginSwitch()
     const { data: created, error } = await supabase
       .from('silos')
-      .insert({ user_id: userId, nome: config.nome, standard_id: config.standardId, dims: config.dims, grain_id: config.grainId })
+      .insert({ user_id: userId, propriedade_id: propertyId, nome: config.nome, standard_id: config.standardId, dims: config.dims, grain_id: config.grainId })
       .select()
       .single()
 
@@ -414,8 +500,11 @@ export const useSiloStore = create<SiloState>((set, get) => ({
       return false
     }
 
-    set({ silos: [...get().silos, { id: created.id, nome: created.nome }] })
-    await applySiloRow(created as SiloRow, set, get)
+    // A lista de silos ganha o novo item mesmo que este switch tenha ficado obsoleto
+    // (o silo existe de verdade no banco); só virar o silo ATIVO é que fica condicionado
+    // a ainda ser a intenção mais recente — ver applySiloRow.
+    set({ silos: [...get().silos, { id: created.id, nome: created.nome, propriedadeId: propertyId }] })
+    await applySiloRow(created as SiloRow, set, get, seq)
     return true
   },
 
@@ -423,25 +512,115 @@ export const useSiloStore = create<SiloState>((set, get) => ({
     const { error } = await supabase.from('silos').delete().eq('id', siloId)
     if (error) {
       console.error('Falha ao excluir silo:', error)
-      return
+      return false
     }
 
     const remaining = get().silos.filter((s) => s.id !== siloId)
     set({ silos: remaining })
 
-    if (get().siloId !== siloId) return
+    if (get().siloId !== siloId) return true
 
-    if (remaining.length > 0) {
-      await get().switchToSilo(remaining[0].id)
+    const { userId, propertyId } = get()
+    const sibling = propertyId ? remaining.find((s) => s.propriedadeId === propertyId) : undefined
+    if (sibling) {
+      await get().switchToSilo(sibling.id)
+      return true
+    }
+
+    // Último silo da propriedade ativa — mantém a garantia de que toda
+    // propriedade sempre tem pelo menos um silo, em vez de deixar uma tela vazia.
+    if (!userId || !propertyId) return true
+    const seq = beginSwitch()
+    const created = await insertDefaultSilo(userId, propertyId, 'Silo 1')
+    if (!created) return true
+    set({ silos: [...remaining, { id: created.id, nome: created.nome, propriedadeId: propertyId }] })
+    await applySiloRow(created, set, get, seq)
+    return true
+  },
+
+  switchProperty: async (propertyId) => {
+    if (propertyId === get().propertyId) return
+    const candidate = get().silos.find((s) => s.propriedadeId === propertyId)
+    if (candidate) {
+      await get().switchToSilo(candidate.id)
+      return
+    }
+    // Não deveria acontecer (toda propriedade sempre ganha um silo default ao
+    // ser criada), mas por segurança cria um se por algum motivo estiver vazia.
+    const userId = get().userId
+    if (!userId) return
+    const seq = beginSwitch()
+    const created = await insertDefaultSilo(userId, propertyId, 'Silo 1')
+    if (!created) return
+    set({ silos: [...get().silos, { id: created.id, nome: created.nome, propriedadeId: propertyId }] })
+    await applySiloRow(created, set, get, seq)
+  },
+
+  createProperty: async (nome) => {
+    const userId = get().userId
+    if (!userId) return false
+    const { data: createdProp, error: propError } = await supabase.from('propriedades').insert({ user_id: userId, nome }).select().single()
+    if (propError || !createdProp) {
+      console.error('Falha ao criar propriedade:', propError)
+      return false
+    }
+
+    const seq = beginSwitch()
+    const createdSilo = await insertDefaultSilo(userId, createdProp.id, 'Silo 1')
+    if (!createdSilo) return false
+
+    set({
+      properties: [...get().properties, { id: createdProp.id, nome: createdProp.nome }],
+      silos: [...get().silos, { id: createdSilo.id, nome: createdSilo.nome, propriedadeId: createdProp.id }],
+    })
+    await applySiloRow(createdSilo, set, get, seq)
+    return true
+  },
+
+  renameProperty: async (propertyId, nome) => {
+    const trimmed = nome.trim()
+    if (!trimmed) return false
+    const { error } = await supabase.from('propriedades').update({ nome: trimmed }).eq('id', propertyId)
+    if (error) {
+      console.error('Falha ao renomear propriedade:', error)
+      return false
+    }
+    set({ properties: get().properties.map((p) => (p.id === propertyId ? { ...p, nome: trimmed } : p)) })
+    return true
+  },
+
+  deleteProperty: async (propertyId) => {
+    const { error } = await supabase.from('propriedades').delete().eq('id', propertyId)
+    if (error) {
+      console.error('Falha ao excluir propriedade:', error)
       return
     }
 
+    const remainingSilos = get().silos.filter((s) => s.propriedadeId !== propertyId)
+    const remainingProperties = get().properties.filter((p) => p.id !== propertyId)
+    set({ silos: remainingSilos, properties: remainingProperties })
+
+    if (get().propertyId !== propertyId) return
+
+    if (remainingProperties.length > 0) {
+      await get().switchProperty(remainingProperties[0].id)
+      return
+    }
+
+    // Última propriedade do usuário — recria uma vazia (com seu silo default),
+    // pelo mesmo motivo de deleteSilo: nunca deixar o usuário sem nenhum silo.
     const userId = get().userId
     if (!userId) return
-    const created = await insertDefaultSilo(userId, 'Silo 1')
-    if (!created) return
-    set({ silos: [{ id: created.id, nome: created.nome }] })
-    await applySiloRow(created, set, get)
+    const seq = beginSwitch()
+    const createdProp = await insertDefaultProperty(userId, 'Propriedade 1')
+    if (!createdProp) return
+    const createdSilo = await insertDefaultSilo(userId, createdProp.id, 'Silo 1')
+    if (!createdSilo) return
+    set({
+      properties: [createdProp],
+      silos: [{ id: createdSilo.id, nome: createdSilo.nome, propriedadeId: createdProp.id }],
+    })
+    await applySiloRow(createdSilo, set, get, seq)
   },
 
   saveSiloConfig: async () => {
@@ -463,7 +642,18 @@ export const useSiloStore = create<SiloState>((set, get) => ({
     const { userId } = get()
     if (!userId) return null
 
-    const { data: silos, error: silosError } = await supabase.from('silos').select('*').eq('user_id', userId)
+    const { data: propriedades, error: propriedadesError } = await supabase.from('propriedades').select('*').eq('user_id', userId)
+    if (propriedadesError || !propriedades) {
+      console.error('Falha ao exportar propriedades:', propriedadesError)
+      return null
+    }
+
+    const propriedadeIds = propriedades.map((p) => p.id)
+    if (propriedadeIds.length === 0) {
+      return { exportadoEm: new Date().toISOString(), propriedades: [], silos: [], leituras: [], historicoNiveis: [], alertas: [] }
+    }
+
+    const { data: silos, error: silosError } = await supabase.from('silos').select('*').in('propriedade_id', propriedadeIds)
     if (silosError || !silos) {
       console.error('Falha ao exportar silos:', silosError)
       return null
@@ -471,7 +661,7 @@ export const useSiloStore = create<SiloState>((set, get) => ({
 
     const siloIds = silos.map((s) => s.id)
     if (siloIds.length === 0) {
-      return { exportadoEm: new Date().toISOString(), silos: [], leituras: [], historicoNiveis: [], alertas: [] }
+      return { exportadoEm: new Date().toISOString(), propriedades, silos: [], leituras: [], historicoNiveis: [], alertas: [] }
     }
 
     const [leiturasRes, historicoRes, alertasRes] = await Promise.all([
@@ -487,6 +677,7 @@ export const useSiloStore = create<SiloState>((set, get) => ({
 
     return {
       exportadoEm: new Date().toISOString(),
+      propriedades,
       silos,
       leituras: leiturasRes.data ?? [],
       historicoNiveis: historicoRes.data ?? [],
@@ -503,5 +694,21 @@ export const useSiloStore = create<SiloState>((set, get) => ({
     return true
   },
 
-  resetConfig: () => set({ userId: null, silos: [], siloId: null, configLoaded: false, lastHistoryPersistAt: 0 }),
+  resetConfig: () => {
+    // Invalida qualquer load/troca em andamento (ex.: logout no meio do
+    // carregamento inicial) — ver o comentário de switchSeq/beginSwitch acima.
+    beginSwitch()
+    set({
+      userId: null,
+      role: 'user',
+      blocked: false,
+      properties: [],
+      propertyId: null,
+      silos: [],
+      siloId: null,
+      configLoaded: false,
+      configError: null,
+      lastHistoryPersistAt: 0,
+    })
+  },
 }))

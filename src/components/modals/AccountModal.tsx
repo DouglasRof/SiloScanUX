@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useSiloStore } from '../../store/useSiloStore'
+import { isValidUsername } from '../../lib/auth'
+import { TEXT_INPUT_CLASS } from '../../lib/formStyles'
 import { Modal } from './Modal'
+
+const inputClass = `${TEXT_INPUT_CLASS} px-2.5 py-1.5`
 
 export function AccountModal({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [username, setUsername] = useState('')
+  // Persistente (não é um toast que some sozinho) — reflete profiles.pending_username
+  // enquanto um admin não aprova ou rejeita a troca.
+  const [pendingUsername, setPendingUsername] = useState<string | null>(null)
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'saving' | 'saved' | 'error' | 'taken'>('idle')
   const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'error'>('idle')
   const [confirmText, setConfirmText] = useState('')
   const [deleteStatus, setDeleteStatus] = useState<'idle' | 'deleting' | 'error'>('idle')
@@ -13,8 +23,61 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const deleteMyAccount = useSiloStore((s) => s.deleteMyAccount)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null))
+    let cancelled = false
+    supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return
+      const user = data.user
+      setEmail(user?.email ?? null)
+      setUserId(user?.id ?? null)
+      if (!user) return
+      supabase
+        .from('profiles')
+        .select('username, pending_username')
+        .eq('id', user.id)
+        .single()
+        .then(({ data: profile }) => {
+          if (cancelled) return
+          setUsername(profile?.username ?? '')
+          setPendingUsername(profile?.pending_username ?? null)
+        })
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
+
+  // Volta pro estado neutro um tempo depois de mostrar o resultado, em vez de ficar preso ali.
+  useEffect(() => {
+    if (usernameStatus === 'idle' || usernameStatus === 'saving') return
+    const timeout = setTimeout(() => setUsernameStatus('idle'), 2500)
+    return () => clearTimeout(timeout)
+  }, [usernameStatus])
+
+  const usernameTouched = username.length > 0
+  const usernameValid = isValidUsername(username)
+
+  async function handleSaveUsername() {
+    if (!userId || !usernameValid) return
+    setUsernameStatus('saving')
+    // RPC em vez de update direto: profiles não tem policy de UPDATE geral pra
+    // usuário comum (de propósito — ver set_my_username em login_por_usuario.sql),
+    // só essa porta estreita que troca unicamente o próprio username. Devolve
+    // 'applied' (primeira vez, sem nada pra trocar) ou 'pending' (já tinha um —
+    // fica esperando um admin aprovar).
+    const { data, error } = await supabase.rpc('set_my_username', { p_username: username })
+    if (error) {
+      // Violação da constraint unique — mensagem específica em vez do erro genérico.
+      setUsernameStatus(error.code === '23505' ? 'taken' : 'error')
+      return
+    }
+    if (data === 'pending') {
+      setPendingUsername(username)
+      setUsernameStatus('idle')
+      return
+    }
+    setPendingUsername(null)
+    setUsernameStatus('saved')
+  }
 
   async function handleExport() {
     setExportStatus('exporting')
@@ -52,6 +115,40 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           <p className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">E-MAIL</p>
           <p className="text-sm font-semibold text-(--color-ink)">{email ?? '—'}</p>
         </div>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">ID DE USUÁRIO</span>
+          <div className="flex gap-2">
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toLowerCase())}
+              placeholder="joao.silva"
+              className={inputClass}
+            />
+            <button
+              onClick={handleSaveUsername}
+              disabled={!usernameValid || usernameStatus === 'saving'}
+              className="shrink-0 rounded-lg bg-(--color-brand-soft) px-3 py-1.5 text-xs font-semibold text-(--color-brand-dark) disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {usernameStatus === 'saving' ? 'Salvando…' : 'Salvar'}
+            </button>
+          </div>
+          {usernameTouched && !usernameValid && (
+            <span className="text-[11px] text-(--color-danger)">3–24 caracteres: letras minúsculas, números, ponto ou underscore.</span>
+          )}
+          {pendingUsername ? (
+            <span className="text-[11px] font-semibold text-(--color-warn)">Troca para "{pendingUsername}" enviada — aguardando aprovação de um admin.</span>
+          ) : (
+            <>
+              {usernameStatus === 'saved' && <span className="text-[11px] font-semibold text-(--color-good)">Salvo — já dá pra entrar com esse ID.</span>}
+              {usernameStatus === 'taken' && <span className="text-[11px] font-semibold text-(--color-danger)">Esse ID de usuário já está em uso.</span>}
+              {usernameStatus === 'error' && <span className="text-[11px] font-semibold text-(--color-danger)">Não foi possível salvar. Tente novamente.</span>}
+              {!usernameTouched && usernameStatus === 'idle' && (
+                <span className="text-[11px] text-(--color-ink-faint)">Ainda não definido — alternativa ao e-mail para entrar.</span>
+              )}
+            </>
+          )}
+        </label>
 
         <div className="rounded-xl border border-(--color-line) p-3.5">
           <p className="mb-1 text-[11px] font-bold tracking-wide text-(--color-ink-faint)">EXPORTAR MEUS DADOS</p>

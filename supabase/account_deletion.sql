@@ -5,7 +5,7 @@
 -- leituras/historico_niveis/alertas) têm "on delete cascade" para auth.users,
 -- isso já apaga tudo o que pertence à conta. Não dá pra desfazer.
 
-create function public.delete_my_account()
+create or replace function public.delete_my_account()
 returns void
 language plpgsql
 security definer set search_path = public

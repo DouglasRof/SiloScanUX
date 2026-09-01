@@ -15,11 +15,27 @@ export function useTheme() {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
-    localStorage.setItem(STORAGE_KEY, theme)
   }, [theme])
 
+  // Só acompanha a preferência do sistema enquanto o usuário nunca tiver
+  // escolhido um tema manualmente (nada em STORAGE_KEY ainda) — depois do
+  // primeiro toggle, a escolha da pessoa passa a valer sobre o SO.
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    function handleChange(e: MediaQueryListEvent) {
+      if (localStorage.getItem(STORAGE_KEY)) return
+      setTheme(e.matches ? 'dark' : 'light')
+    }
+    media.addEventListener('change', handleChange)
+    return () => media.removeEventListener('change', handleChange)
+  }, [])
+
   function toggleTheme() {
-    setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+    setTheme((t) => {
+      const next: Theme = t === 'dark' ? 'light' : 'dark'
+      localStorage.setItem(STORAGE_KEY, next)
+      return next
+    })
   }
 
   return { theme, toggleTheme }

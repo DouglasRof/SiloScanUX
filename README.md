@@ -20,13 +20,22 @@ e alertas. Desenvolvido para a InovAgroTec.
    (*Project Settings → API*).
 4. No **SQL Editor** do painel Supabase, rode nesta ordem:
    - `supabase/schema.sql`
+   - `supabase/propriedades.sql`
+   - `supabase/login_por_usuario.sql`
+   - `supabase/roles_admin.sql` (depende da coluna `username` criada no arquivo anterior)
    - `supabase/ingest_scan.sql`
    - `supabase/historico_niveis.sql`
    - `supabase/audit_log.sql`
    - `supabase/account_deletion.sql`
-5. Crie seu primeiro usuário em **Authentication → Users** (marque *Auto Confirm User*).
-6. `npm run dev`
-7. (Opcional) Crie um projeto gratuito em [Sentry](https://sentry.io) e cole o DSN em
+5. Em **Authentication → Providers → Email**, desmarque *Confirm email* — o cadastro
+   pela tela de login dá acesso imediato, sem confirmação por e-mail.
+6. Crie sua conta pela própria tela de login (aba "Criar conta"), depois torne ela
+   admin rodando no SQL Editor:
+   ```sql
+   update public.profiles set role = 'admin' where id = '<seu uuid, em Authentication → Users>';
+   ```
+7. `npm run dev`
+8. (Opcional) Crie um projeto gratuito em [Sentry](https://sentry.io) e cole o DSN em
    `VITE_SENTRY_DSN` no `.env.local` para monitoramento de erro em produção. Sem essa
    variável, o app funciona normalmente, só sem reportar erros.
 
@@ -50,12 +59,18 @@ e alertas. Desenvolvido para a InovAgroTec.
 - `src/lib/` — lógica de negócio pura: cálculo de volume (`volume.ts`), geometria do
   grão (`grainGeometry.ts`), topografia/cores (`topography.ts`), gerador de leitura
   sintética (`mockLidar.ts`), estimativa de fluxo (`flow.ts`)
-- `src/store/useSiloStore.ts` — estado global (Zustand); a configuração do silo persiste
-  no Supabase, a simulação ao vivo roda só na memória do navegador
+- `src/store/useSiloStore.ts` — estado global (Zustand); a configuração de
+  propriedades/silos persiste no Supabase, a simulação ao vivo roda só na memória do
+  navegador
 - `src/lib/supabaseClient.ts` — client do Supabase
-- `supabase/` — schema do banco (`schema.sql`), a função de ingestão de leituras de
-  sensor (`ingest_scan.sql`), log de auditoria (`audit_log.sql`) e exclusão de conta
-  (`account_deletion.sql`)
+- `src/lib/auth.ts` — login por username (resolve pra e-mail antes de autenticar)
+- `src/lib/admin.ts` — funções do back office (usuários, visão cross-tenant, chaves de
+  sensor)
+- `src/components/admin/` — telas do back office (visível só para `role = 'admin'`)
+- `supabase/` — schema do banco (`schema.sql`), propriedades (`propriedades.sql`),
+  papéis/admin (`roles_admin.sql`), login por username (`login_por_usuario.sql`), a
+  função de ingestão de leituras de sensor (`ingest_scan.sql`), log de auditoria
+  (`audit_log.sql`) e exclusão de conta (`account_deletion.sql`)
 - `scripts/test-ingest-scan.mjs` — simula um dispositivo de campo chamando o endpoint
   de ingestão
 - `legal/` — minutas de política de privacidade e termos de uso (precisam de revisão

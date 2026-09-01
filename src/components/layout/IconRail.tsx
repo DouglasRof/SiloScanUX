@@ -1,7 +1,9 @@
-import { BellIcon, ChartIcon, ClipboardIcon, GearIcon, HelpIcon, HomeIcon } from '../icons'
+import { BellIcon, ChartIcon, ClipboardIcon, GearIcon, HelpIcon, HomeIcon, ShieldIcon } from '../icons'
+import type { UserRole } from '../../types/silo'
 
 interface IconRailProps {
   active: string
+  role: UserRole
   alertCount: number
   onSelect: (id: string) => void
   onOpenSettings: () => void
@@ -10,10 +12,13 @@ interface IconRailProps {
   onOpenHistory: () => void
 }
 
-export function IconRail({ active, alertCount, onSelect, onOpenSettings, onOpenReports, onOpenAlerts, onOpenHistory }: IconRailProps) {
-  // Only 'dashboard' is a real navigation destination — the others open a modal and
-  // never become the "active" section, so they never get the selected highlight.
-  const navItems = [{ id: 'dashboard', label: 'Dashboard', icon: <HomeIcon />, onClick: () => onSelect('dashboard') }]
+export function IconRail({ active, role, alertCount, onSelect, onOpenSettings, onOpenReports, onOpenAlerts, onOpenHistory }: IconRailProps) {
+  // 'dashboard' e 'admin' são destinos reais de navegação — os outros abrem um modal
+  // e nunca ficam com o destaque de "ativo".
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: <HomeIcon />, onClick: () => onSelect('dashboard') },
+    ...(role === 'admin' ? [{ id: 'admin', label: 'Back office', icon: <ShieldIcon />, onClick: () => onSelect('admin') }] : []),
+  ]
   const actionItems = [
     { id: 'relatorios', label: 'Relatórios', icon: <ClipboardIcon />, onClick: onOpenReports },
     { id: 'historico', label: 'Histórico', icon: <ChartIcon />, onClick: onOpenHistory },
