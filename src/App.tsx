@@ -5,7 +5,7 @@ import { supabase } from './lib/supabaseClient'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { IconRail } from './components/layout/IconRail'
 import { TopBar } from './components/layout/TopBar'
-import { LeftPanel } from './components/layout/LeftPanel'
+import { DashboardLayout } from './components/layout/DashboardLayout'
 import { ViewModeToggle, type ViewMode } from './components/layout/ViewModeToggle'
 import { SiloCanvas } from './components/silo3d/SiloCanvas'
 import { Silo2DView } from './components/silo2d/Silo2DView'
@@ -30,7 +30,7 @@ function Silo3DErrorFallback({ onRetry, onSwitchTo2D }: { onRetry: () => void; o
       <div className="flex gap-2">
         <button
           onClick={onRetry}
-          className="rounded-lg bg-(--color-brand) px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-95"
+          className="rounded-lg bg-(--color-navy) px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-95"
         >
           Tentar novamente
         </button>
@@ -48,7 +48,7 @@ function Silo3DErrorFallback({ onRetry, onSwitchTo2D }: { onRetry: () => void; o
 function BlockedScreen() {
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-linear-to-b from-(--color-app-from) to-(--color-app-to) p-4">
-      <div className="w-full max-w-[380px] rounded-2xl border border-(--color-line) bg-(--color-panel) p-6 text-center shadow-[0_8px_30px_rgba(16,40,60,0.16)]">
+      <div className="w-full max-w-[380px] rounded-2xl border border-(--color-line) bg-(--color-panel) p-6 text-center shadow-[0_8px_30px_rgba(43,27,16,0.14)]">
         <p className="text-sm font-semibold text-(--color-ink)">Sua conta está bloqueada.</p>
         <p className="mt-1 text-[12px] text-(--color-ink-faint)">Fale com um administrador para liberar o acesso.</p>
       </div>
@@ -59,11 +59,11 @@ function BlockedScreen() {
 function ConfigErrorScreen({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-linear-to-b from-(--color-app-from) to-(--color-app-to) p-4">
-      <div className="w-full max-w-[380px] rounded-2xl border border-(--color-line) bg-(--color-panel) p-6 text-center shadow-[0_8px_30px_rgba(16,40,60,0.16)]">
+      <div className="w-full max-w-[380px] rounded-2xl border border-(--color-line) bg-(--color-panel) p-6 text-center shadow-[0_8px_30px_rgba(43,27,16,0.14)]">
         <p className="text-sm font-semibold text-(--color-ink)">{message}</p>
         <button
           onClick={onRetry}
-          className="mt-3 rounded-lg bg-(--color-brand) px-4 py-2 text-[13px] font-bold text-white transition-colors hover:brightness-95"
+          className="mt-3 rounded-lg bg-(--color-navy) px-4 py-2 text-[13px] font-bold text-white transition-colors hover:brightness-95"
         >
           Tentar novamente
         </button>
@@ -150,7 +150,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-(--color-panel) pb-14 sm:pb-0">
+    <div className="flex h-screen w-screen overflow-hidden bg-linear-to-b from-(--color-app-from) to-(--color-app-to) pb-14 sm:pb-0">
       <IconRail
         active={activeRail}
         role={role}
@@ -186,21 +186,23 @@ export default function App() {
         {activeRail === 'admin' ? (
           <AdminBackOffice />
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto sm:flex-row sm:overflow-hidden">
-            <LeftPanel onOpenHistory={() => setModal('history')} />
-            <main className="relative order-1 h-[42vh] w-full shrink-0 sm:order-none sm:h-auto sm:w-auto sm:min-w-0 sm:flex-1 sm:shrink">
-              {viewMode === '3d' ? (
-                <ErrorBoundary
-                  fallback={(retry) => <Silo3DErrorFallback onRetry={retry} onSwitchTo2D={() => setViewMode('2d')} />}
-                >
-                  <SiloCanvas />
-                </ErrorBoundary>
-              ) : (
-                <Silo2DView />
-              )}
-              <ViewModeToggle mode={viewMode} onChange={setViewMode} />
-            </main>
-          </div>
+          <DashboardLayout
+            onOpenHistory={() => setModal('history')}
+            mainContent={
+              <main className="relative h-full w-full">
+                {viewMode === '3d' ? (
+                  <ErrorBoundary
+                    fallback={(retry) => <Silo3DErrorFallback onRetry={retry} onSwitchTo2D={() => setViewMode('2d')} />}
+                  >
+                    <SiloCanvas />
+                  </ErrorBoundary>
+                ) : (
+                  <Silo2DView />
+                )}
+                <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+              </main>
+            }
+          />
         )}
       </div>
 

@@ -1,6 +1,8 @@
 import { useSiloStore } from '../../store/useSiloStore'
 import { formatDateTime, formatNumber, formatTon } from '../../lib/format'
 import { Modal } from './Modal'
+import { Button } from '../ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 
 function toCsv(rows: { t: number; levelPercent: number; volumeM3: number; massTon: number }[]): string {
   const header = 'timestamp,data_hora,nivel_pct,volume_m3,massa_t'
@@ -61,32 +63,32 @@ export function ReportsModal({ onClose }: { onClose: () => void }) {
 
       <div className="mt-4 flex items-center justify-between">
         <p className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">HISTÓRICO RECENTE</p>
-        <button onClick={handleExport} className="rounded-lg bg-(--color-brand-soft) px-3 py-1.5 text-xs font-semibold text-(--color-brand-dark)">
+        <Button onClick={handleExport} variant="secondary" className="h-auto rounded-lg px-3 py-1.5 text-xs font-semibold">
           Exportar CSV
-        </button>
+        </Button>
       </div>
 
       <div className="mt-2 max-h-64 overflow-auto rounded-xl border border-(--color-line) scroll-slim">
-        <table className="w-full min-w-[420px] text-left text-[12px]">
-          <thead className="sticky top-0 bg-(--color-panel-soft) text-(--color-ink-faint)">
-            <tr>
-              <th className="px-3 py-2 font-semibold">Data/Hora</th>
-              <th className="px-3 py-2 font-semibold">Nível</th>
-              <th className="px-3 py-2 font-semibold">Volume</th>
-              <th className="px-3 py-2 font-semibold">Massa</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-[420px] text-[12px]">
+          <TableHeader className="sticky top-0 bg-(--color-panel-soft) text-(--color-ink-faint)">
+            <TableRow className="border-0 hover:bg-transparent">
+              <TableHead className="h-auto px-3 py-2 font-semibold text-(--color-ink-faint)">Data/Hora</TableHead>
+              <TableHead className="h-auto px-3 py-2 font-semibold text-(--color-ink-faint)">Nível</TableHead>
+              <TableHead className="h-auto px-3 py-2 font-semibold text-(--color-ink-faint)">Volume</TableHead>
+              <TableHead className="h-auto px-3 py-2 font-semibold text-(--color-ink-faint)">Massa</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {recent.map((r) => (
-              <tr key={r.t} className="border-t border-(--color-line)">
-                <td className="px-3 py-1.5 tabular">{formatDateTime(r.t)}</td>
-                <td className="px-3 py-1.5 tabular">{r.levelPercent.toFixed(0)}%</td>
-                <td className="px-3 py-1.5 tabular">{formatNumber(r.volumeM3)} m³</td>
-                <td className="px-3 py-1.5 tabular">{formatTon(r.massTon)} t</td>
-              </tr>
+              <TableRow key={r.t} className="border-t border-(--color-line) hover:bg-transparent">
+                <TableCell className="tabular px-3 py-1.5">{formatDateTime(r.t)}</TableCell>
+                <TableCell className="tabular px-3 py-1.5">{r.levelPercent.toFixed(0)}%</TableCell>
+                <TableCell className="tabular px-3 py-1.5">{formatNumber(r.volumeM3)} m³</TableCell>
+                <TableCell className="tabular px-3 py-1.5">{formatTon(r.massTon)} t</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </Modal>
   )

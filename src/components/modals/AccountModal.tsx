@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useSiloStore } from '../../store/useSiloStore'
 import { isValidUsername } from '../../lib/auth'
-import { TEXT_INPUT_CLASS } from '../../lib/formStyles'
 import { Modal } from './Modal'
-
-const inputClass = `${TEXT_INPUT_CLASS} px-2.5 py-1.5`
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { Label } from '../ui/label'
 
 export function AccountModal({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState<string | null>(null)
@@ -116,22 +116,20 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           <p className="text-sm font-semibold text-(--color-ink)">{email ?? '—'}</p>
         </div>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">ID DE USUÁRIO</span>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="account-username" className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">
+            ID DE USUÁRIO
+          </Label>
           <div className="flex gap-2">
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value.toLowerCase())}
-              placeholder="joao.silva"
-              className={inputClass}
-            />
-            <button
+            <Input id="account-username" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} placeholder="joao.silva" />
+            <Button
               onClick={handleSaveUsername}
               disabled={!usernameValid || usernameStatus === 'saving'}
-              className="shrink-0 rounded-lg bg-(--color-brand-soft) px-3 py-1.5 text-xs font-semibold text-(--color-brand-dark) disabled:cursor-not-allowed disabled:opacity-50"
+              variant="secondary"
+              className="h-auto shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold"
             >
               {usernameStatus === 'saving' ? 'Salvando…' : 'Salvar'}
-            </button>
+            </Button>
           </div>
           {usernameTouched && !usernameValid && (
             <span className="text-[11px] text-(--color-danger)">3–24 caracteres: letras minúsculas, números, ponto ou underscore.</span>
@@ -148,20 +146,16 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               )}
             </>
           )}
-        </label>
+        </div>
 
         <div className="rounded-xl border border-(--color-line) p-3.5">
           <p className="mb-1 text-[11px] font-bold tracking-wide text-(--color-ink-faint)">EXPORTAR MEUS DADOS</p>
           <p className="mb-2 text-[11px] text-(--color-ink-faint)">
             Baixa um arquivo com todos os seus silos, leituras e histórico — seu direito de portabilidade (LGPD, art. 18).
           </p>
-          <button
-            onClick={handleExport}
-            disabled={exportStatus === 'exporting'}
-            className="rounded-lg bg-(--color-brand-soft) px-3 py-1.5 text-xs font-semibold text-(--color-brand-dark) disabled:cursor-wait disabled:opacity-60"
-          >
+          <Button onClick={handleExport} disabled={exportStatus === 'exporting'} variant="secondary" className="h-auto rounded-lg px-3 py-1.5 text-xs font-semibold">
             {exportStatus === 'exporting' ? 'Exportando…' : 'Exportar meus dados (.json)'}
-          </button>
+          </Button>
           {exportStatus === 'error' && <p className="mt-2 text-[11px] font-medium text-(--color-danger)">Não foi possível exportar. Tente novamente.</p>}
         </div>
 
@@ -170,22 +164,21 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           <p className="mb-2 text-[11px] text-(--color-ink-soft)">
             Apaga permanentemente sua conta, todos os silos e todo o histórico associado. Não pode ser desfeito.
           </p>
-          <label className="mb-2 flex flex-col gap-1">
-            <span className="text-[11px] text-(--color-ink-faint)">Digite EXCLUIR para confirmar</span>
-            <input
+          <div className="mb-2 flex flex-col gap-1">
+            <Label htmlFor="account-delete-confirm" className="text-[11px] text-(--color-ink-faint)">
+              Digite EXCLUIR para confirmar
+            </Label>
+            <Input
+              id="account-delete-confirm"
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              className="rounded-lg border border-(--color-line) bg-(--color-panel) px-2.5 py-1.5 text-sm"
+              className="bg-(--color-panel)"
               placeholder="EXCLUIR"
             />
-          </label>
-          <button
-            onClick={handleDelete}
-            disabled={!canDelete || deleteStatus === 'deleting'}
-            className="rounded-lg bg-(--color-danger) px-3 py-1.5 text-xs font-bold text-white transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          </div>
+          <Button onClick={handleDelete} disabled={!canDelete || deleteStatus === 'deleting'} variant="destructive" className="h-auto rounded-lg px-3 py-1.5 text-xs font-bold">
             {deleteStatus === 'deleting' ? 'Excluindo…' : 'Excluir minha conta definitivamente'}
-          </button>
+          </Button>
           {deleteStatus === 'error' && <p className="mt-2 text-[11px] font-medium text-(--color-danger)">Não foi possível excluir a conta. Tente novamente.</p>}
         </div>
       </div>

@@ -5,19 +5,22 @@ import { GRAIN_PROFILES } from '../../data/grainProfiles'
 import { totalCapacityM3 } from '../../lib/volume'
 import type { FillMode } from '../../lib/mockLidar'
 import type { SiloDimensions } from '../../types/silo'
-import { TEXT_INPUT_CLASS } from '../../lib/formStyles'
 import { Modal } from './Modal'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { Label } from '../ui/label'
+import { Slider } from '../ui/slider'
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '../ui/select'
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">{label.toUpperCase()}</span>
+    <div className="flex flex-col gap-1">
+      <Label className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">{label.toUpperCase()}</Label>
       {children}
-    </label>
+    </div>
   )
 }
-
-const inputClass = `${TEXT_INPUT_CLASS} px-2.5 py-1.5`
 
 /** Dimension fields can't go negative — a stray "-" typed into a number input would
  * otherwise flow straight into totalCapacityM3() and produce a nonsensical capacity. */
@@ -27,8 +30,25 @@ function nonNegative(value: string): number {
 
 const siloLines = [...new Set(STANDARD_SILOS.map((s) => s.line))]
 
+// Base UI's <Select.Value> shows the raw selected value by default — these map it back
+// to the descriptive label the matching <SelectItem> renders, for each of the 3 selects below.
+function standardLabel(id: string): string {
+  if (id === CUSTOM_SILO_ID) return 'Personalizado…'
+  const s = STANDARD_SILOS.find((x) => x.id === id)
+  return s ? `${s.name} — Ø${s.diameterM}m × ${s.cylinderHeightM}m (${Math.round(s.nominalCapacityM3)} m³)` : id
+}
+
+const HOPPER_TYPE_LABEL: Record<string, string> = { cone: 'Fundo cônico (moega)', flat: 'Fundo plano' }
+
+function grainLabel(id: string): string {
+  const g = GRAIN_PROFILES.find((x) => x.id === id)
+  return g ? `${g.name} — ${g.bulkDensityKgM3} kg/m³` : id
+}
+
 // 2MB é folgado pra um scan real, apertado o bastante contra um arquivo absurdo.
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024
+
+const SIM_MODE_LABEL: Record<FillMode, string> = { idle: 'Repouso', filling: 'Abastecendo', draining: 'Descarregando' }
 
 interface SettingsModalProps {
   onClose: () => void
@@ -157,83 +177,85 @@ export function SettingsModal({ onClose, mode = 'edit' }: SettingsModalProps) {
     <Modal title={isCreateMode ? 'Novo silo' : 'Configurações do silo'} onClose={onClose} width={520} closeOnBackdropClick={false}>
       <div className="flex flex-col gap-4">
         <Field label="Identificação">
-          <input className={inputClass} value={siloName} onChange={(e) => handleNameChange(e.target.value)} placeholder="SILO 03" />
+          <Input value={siloName} onChange={(e) => handleNameChange(e.target.value)} placeholder="SILO 03" />
         </Field>
 
         <Field label="Modelo de silo">
-          <select className={inputClass} value={standardId} onChange={(e) => handleStandardChange(e.target.value)}>
-            {siloLines.map((line) => (
-              <optgroup key={line} label={line}>
-                {STANDARD_SILOS.filter((s) => s.line === line).map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} — Ø{s.diameterM}m × {s.cylinderHeightM}m ({Math.round(s.nominalCapacityM3)} m³)
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-            <option value={CUSTOM_SILO_ID}>Personalizado…</option>
-          </select>
+          <Select value={standardId} onValueChange={(value) => value && handleStandardChange(value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue>{(value: string) => standardLabel(value)}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {siloLines.map((line) => (
+                <SelectGroup key={line}>
+                  <SelectLabel>{line}</SelectLabel>
+                  {STANDARD_SILOS.filter((s) => s.line === line).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} — Ø{s.diameterM}m × {s.cylinderHeightM}m ({Math.round(s.nominalCapacityM3)} m³)
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
+              <SelectItem value={CUSTOM_SILO_ID}>Personalizado…</SelectItem>
+            </SelectContent>
+          </Select>
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Diâmetro (m)">
-            <input
+            <Input
               type="number"
               step="0.1"
               min={0}
-              className={inputClass}
               value={dims.diameterM}
               onChange={(e) => handleDimsChange({ diameterM: nonNegative(e.target.value) })}
             />
           </Field>
           <Field label="Altura da parede (m)">
-            <input
+            <Input
               type="number"
               step="0.1"
               min={0}
-              className={inputClass}
               value={dims.cylinderHeightM}
               onChange={(e) => handleDimsChange({ cylinderHeightM: nonNegative(e.target.value) })}
             />
           </Field>
           <Field label="Altura do telhado (m)">
-            <input
+            <Input
               type="number"
               step="0.1"
               min={0}
-              className={inputClass}
               value={dims.roofHeightM}
               onChange={(e) => handleDimsChange({ roofHeightM: nonNegative(e.target.value) })}
             />
           </Field>
           <Field label="Tipo de fundo">
-            <select
-              className={inputClass}
-              value={dims.hopperType}
-              onChange={(e) => handleDimsChange({ hopperType: e.target.value as 'flat' | 'cone' })}
-            >
-              <option value="cone">Fundo cônico (moega)</option>
-              <option value="flat">Fundo plano</option>
-            </select>
+            <Select value={dims.hopperType} onValueChange={(value) => handleDimsChange({ hopperType: value as 'flat' | 'cone' })}>
+              <SelectTrigger className="w-full">
+                <SelectValue>{(value: string) => HOPPER_TYPE_LABEL[value] ?? value}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cone">Fundo cônico (moega)</SelectItem>
+                <SelectItem value="flat">Fundo plano</SelectItem>
+              </SelectContent>
+            </Select>
           </Field>
           {dims.hopperType === 'cone' && (
             <>
               <Field label="Altura da moega (m)">
-                <input
+                <Input
                   type="number"
                   step="0.1"
                   min={0}
-                  className={inputClass}
                   value={dims.hopperHeightM}
                   onChange={(e) => handleDimsChange({ hopperHeightM: nonNegative(e.target.value) })}
                 />
               </Field>
               <Field label="Diâmetro da saída (m)">
-                <input
+                <Input
                   type="number"
                   step="0.05"
                   min={0}
-                  className={inputClass}
                   value={dims.outletDiameterM}
                   onChange={(e) => handleDimsChange({ outletDiameterM: nonNegative(e.target.value) })}
                 />
@@ -248,23 +270,24 @@ export function SettingsModal({ onClose, mode = 'edit' }: SettingsModalProps) {
         </p>
 
         <Field label="Produto armazenado">
-          <select className={inputClass} value={grain.id} onChange={(e) => handleGrainChange(e.target.value)}>
-            {GRAIN_PROFILES.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name} — {g.bulkDensityKgM3} kg/m³
-              </option>
-            ))}
-          </select>
+          <Select value={grain.id} onValueChange={(value) => value && handleGrainChange(value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue>{(value: string) => grainLabel(value)}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {GRAIN_PROFILES.map((g) => (
+                <SelectItem key={g.id} value={g.id}>
+                  {g.name} — {g.bulkDensityKgM3} kg/m³
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
 
         <div className="flex items-center gap-3 border-t border-(--color-line) pt-4">
-          <button
-            onClick={handleSave}
-            disabled={saveStatus === 'saving'}
-            className="rounded-lg bg-(--color-brand) px-4 py-2 text-xs font-bold text-white transition-colors hover:brightness-95 disabled:cursor-wait disabled:opacity-70"
-          >
+          <Button onClick={handleSave} disabled={saveStatus === 'saving'} className="h-auto rounded-lg px-4 py-2 text-xs font-bold">
             {isCreateMode ? (saveStatus === 'saving' ? 'Criando…' : 'Criar silo') : saveStatus === 'saving' ? 'Salvando…' : 'Salvar configurações'}
-          </button>
+          </Button>
           {saveStatus === 'saved' && (
             <span className="text-xs font-semibold text-(--color-good)" role="status">
               Salvo com sucesso.
@@ -282,37 +305,37 @@ export function SettingsModal({ onClose, mode = 'edit' }: SettingsModalProps) {
             <div className="rounded-xl border border-(--color-line) bg-(--color-panel-soft) p-3.5">
               <p className="mb-2 text-[11px] font-bold tracking-wide text-(--color-ink-faint)">SIMULAÇÃO DO SENSOR LIDAR</p>
               <div className="flex items-center gap-3">
-                <input
-                  type="range"
+                <Slider
                   min={0}
                   max={100}
-                  value={targetLevelPercent}
-                  onChange={(e) => setTargetLevelPercent(Number(e.target.value))}
+                  value={[targetLevelPercent]}
+                  onValueChange={(value) => setTargetLevelPercent(Array.isArray(value) ? value[0] : value)}
                   aria-label="Nível alvo do silo (%)"
-                  className="flex-1 accent-(--color-brand)"
+                  className="flex-1"
                 />
                 <span className="w-12 text-right text-sm font-bold tabular">{targetLevelPercent.toFixed(0)}%</span>
               </div>
               <div className="mt-3 flex items-center gap-2">
-                {(['idle', 'filling', 'draining'] as FillMode[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMode(m)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                      simMode === m ? 'bg-(--color-brand) text-white' : 'bg-white text-(--color-ink-soft) border border-(--color-line)'
-                    }`}
-                  >
-                    {m === 'idle' ? 'Repouso' : m === 'filling' ? 'Abastecendo' : 'Descarregando'}
-                  </button>
-                ))}
-                <button
+                <ToggleGroup
+                  variant="outline"
+                  value={[simMode]}
+                  onValueChange={(value) => value[0] && setMode(value[0] as FillMode)}
+                >
+                  {(['idle', 'filling', 'draining'] as FillMode[]).map((m) => (
+                    <ToggleGroupItem key={m} value={m} className="rounded-lg px-3 py-1.5 text-xs font-semibold data-pressed:bg-(--color-navy) data-pressed:text-white">
+                      {SIM_MODE_LABEL[m]}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+                <Button
                   onClick={toggleSimulation}
-                  className={`ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                    isSimulating ? 'bg-(--color-good-soft) text-(--color-good)' : 'bg-(--color-danger-soft) text-(--color-danger)'
+                  variant="ghost"
+                  className={`ml-auto h-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                    isSimulating ? 'bg-(--color-good-soft) text-(--color-good) hover:bg-(--color-good-soft)' : 'bg-(--color-danger-soft) text-(--color-danger) hover:bg-(--color-danger-soft)'
                   }`}
                 >
                   {isSimulating ? 'Ativa' : 'Pausada'}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -321,12 +344,9 @@ export function SettingsModal({ onClose, mode = 'edit' }: SettingsModalProps) {
               <p className="mb-2 text-[11px] text-(--color-ink-faint)">
                 Aceita <code>{'{ sensorHeightM, points:[{angleDeg,radiusM,distanceM}] }'}</code> ou pontos já convertidos com <code>heightM</code>.
               </p>
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="rounded-lg bg-(--color-brand-soft) px-3 py-1.5 text-xs font-semibold text-(--color-brand-dark)"
-              >
+              <Button onClick={() => fileRef.current?.click()} variant="secondary" className="h-auto rounded-lg px-3 py-1.5 text-xs font-semibold">
                 Carregar arquivo .json
-              </button>
+              </Button>
               <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={handleFile} />
               {(jsonError || lastScanError) && <p className="mt-2 text-[11px] font-medium text-(--color-danger)">{jsonError ?? lastScanError}</p>}
             </div>

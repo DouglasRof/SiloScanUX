@@ -1,58 +1,147 @@
 @import 'tailwindcss';
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme {
   --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
-  --color-app-from: #cfe8f7;
-  --color-app-to: #eef7fc;
-  --color-panel: #ffffff;
-  --color-panel-soft: #f6fafd;
-  --color-ink: #16232d;
-  --color-ink-soft: #5c6f7c;
-  --color-ink-faint: #93a3ad;
-  --color-line: #e3ecf2;
+  /* Fundo da página fora dos módulos (por trás da topbar/rail, atrás dos vãos) —
+     degradê neutro: azul acinzentado no topo (bem visível, não só um traço sutil)
+     até cinza claro na base. */
+  --color-app-from: #c7d2dc;
+  --color-app-to: #f2f2f0;
+  --color-panel: #fffdf8;
+  --color-panel-soft: #faf3e7;
+  --color-ink: #2b1b10;
+  --color-ink-soft: #6b5641;
+  --color-ink-faint: #a6957a;
+  --color-line: #e8dcc5;
 
-  --color-brand: #2f7bc4;
-  --color-brand-dark: #1f5a94;
-  --color-brand-soft: #e8f2fb;
+  --color-good: #166534;
+  --color-good-soft: #e3f0dc;
+  --color-warn: #a16207;
+  --color-warn-soft: #fef3c7;
+  --color-danger: #9f1d1d;
+  --color-danger-soft: #fbe4e1;
 
-  --color-good: #1f9d5c;
-  --color-good-soft: #e2f7ea;
-  --color-warn: #d98a1c;
-  --color-warn-soft: #fdf1de;
-  --color-danger: #d5504f;
-  --color-danger-soft: #fbe6e5;
+  /* Ícones neutros (não usam mais o marrom/âmbar da paleta de texto) e um único
+     azul-marinho reservado para o que precisa de destaque de "acento" (arco do
+     volume, alternância 3D/2D, seleção no menu) — não para texto/links em geral. */
+  --color-icon: #18181a;
+  --color-navy: #1e3a5f;
+  --color-navy-soft: #e3eaf1;
+
+  /* Painel de vidro — um único contêiner translúcido/desfocado (não cartões
+     coloridos separados) para flutuar sobre a cena 3D sem tampar a visualização.
+     Cor fica reservada só para o que é semântico (status, marca), não decoração. */
+  --glass-bg: rgba(255, 253, 248, 0.62);
+  --glass-border: rgba(43, 27, 16, 0.08);
 }
 
+/* shadcn/ui's semantic tokens, wired to our own indigo palette above instead of
+   the grayscale defaults `shadcn init` generates — so components pulled from the
+   registry (Button, Dialog, etc.) automatically match the app's existing look
+   instead of introducing a second, disconnected color system. */
 :root {
   color-scheme: light;
+  --background: var(--color-panel-soft);
+  --foreground: var(--color-ink);
+  --card: var(--color-panel);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-panel);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-navy);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-navy-soft);
+  --secondary-foreground: var(--color-navy);
+  --muted: var(--color-panel-soft);
+  --muted-foreground: var(--color-ink-soft);
+  --accent: var(--color-navy-soft);
+  --accent-foreground: var(--color-navy);
+  --destructive: var(--color-danger);
+  --border: var(--color-line);
+  --input: var(--color-line);
+  --ring: var(--color-navy);
+  --chart-1: var(--color-navy);
+  --chart-2: var(--color-good);
+  --chart-3: var(--color-warn);
+  --chart-4: var(--color-danger);
+  --chart-5: var(--color-ink-soft);
+  --radius: 0.875rem;
+  --sidebar: var(--color-panel);
+  --sidebar-foreground: var(--color-ink);
+  --sidebar-primary: var(--color-navy);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--color-navy-soft);
+  --sidebar-accent-foreground: var(--color-navy);
+  --sidebar-border: var(--color-line);
+  --sidebar-ring: var(--color-navy);
 }
 
 .dark {
   color-scheme: dark;
 
-  --color-app-from: #0b1621;
-  --color-app-to: #142433;
-  --color-panel: #131c26;
-  --color-panel-soft: #0d151d;
-  --color-ink: #eef3f7;
-  --color-ink-soft: #9fb0bc;
-  --color-ink-faint: #64757f;
-  --color-line: #253645;
+  /* Preto-quase-puro e cinza neutro (não marrom/bege) — o texto também precisa
+     seguir o mesmo tema neutro do fundo, não só o fundo em si. */
+  --color-app-from: #121212;
+  --color-app-to: #17161a;
+  --color-panel: #1c1b1f;
+  --color-panel-soft: #0f0e11;
+  --color-ink: #f0f0f0;
+  --color-ink-soft: #a3a3a8;
+  --color-ink-faint: #6f6f75;
+  --color-line: #2e2c31;
 
-  --color-brand: #4a95d9;
-  --color-brand-dark: #a9d4f7;
-  --color-brand-soft: #1c3348;
-
-  --color-good: #34c17f;
-  --color-good-soft: #123625;
-  --color-warn: #e8a23a;
-  --color-warn-soft: #3a2a12;
+  --color-good: #4ade80;
+  --color-good-soft: #12321e;
+  --color-warn: #f0b429;
+  --color-warn-soft: #3a2a0c;
   /* Deeper than the light-mode danger so white badge text (e.g. the alert-count pill)
      still clears WCAG AA (~4.7:1) against it. */
-  --color-danger: #c2463f;
-  --color-danger-soft: #3a1b1a;
+  --color-danger: #7a1717;
+  --color-danger-soft: #3a1512;
+
+  --glass-bg: rgba(18, 18, 20, 0.58);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  --color-icon: #ececec;
+  --color-navy: #7fa8d1;
+  --color-navy-soft: #1e2c3b;
+
+  --background: var(--color-panel-soft);
+  --foreground: var(--color-ink);
+  --card: var(--color-panel);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-panel);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-navy);
+  --primary-foreground: #0a0a12;
+  --secondary: var(--color-navy-soft);
+  --secondary-foreground: var(--color-navy);
+  --muted: var(--color-panel-soft);
+  --muted-foreground: var(--color-ink-soft);
+  --accent: var(--color-navy-soft);
+  --accent-foreground: var(--color-navy);
+  --destructive: var(--color-danger);
+  --border: var(--color-line);
+  --input: var(--color-line);
+  --ring: var(--color-navy);
+  --chart-1: var(--color-navy);
+  --chart-2: var(--color-good);
+  --chart-3: var(--color-warn);
+  --chart-4: var(--color-danger);
+  --chart-5: var(--color-ink-soft);
+  --sidebar: var(--color-panel);
+  --sidebar-foreground: var(--color-ink);
+  --sidebar-primary: var(--color-navy);
+  --sidebar-primary-foreground: #0a0a12;
+  --sidebar-accent: var(--color-navy-soft);
+  --sidebar-accent-foreground: var(--color-navy);
+  --sidebar-border: var(--color-line);
+  --sidebar-ring: var(--color-navy);
 }
 
 html,
@@ -64,8 +153,6 @@ body,
 body {
   margin: 0;
   font-family: var(--font-sans);
-  color: var(--color-ink);
-  background: var(--color-panel-soft);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -74,12 +161,23 @@ body {
 }
 
 ::selection {
-  background: var(--color-brand-soft);
-  color: var(--color-brand-dark);
+  background: var(--color-navy-soft);
+  color: var(--color-navy);
 }
 
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Painel único, translúcido e desfocado, flutuando sobre a cena 3D — substitui os
+   cartões-bloco chapados. Sombra própria (não a rgba genérica usada em outros
+   lugares) porque precisa se destacar tanto sobre o vidro claro quanto o escuro. */
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .scroll-slim::-webkit-scrollbar {
@@ -92,4 +190,57 @@ body {
 }
 .scroll-slim::-webkit-scrollbar-track {
   background: transparent;
+}
+
+@theme inline {
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useSiloStore } from '../../store/useSiloStore'
-import { TEXT_INPUT_CLASS } from '../../lib/formStyles'
 import { Modal } from './Modal'
-
-const inputClass = `${TEXT_INPUT_CLASS} px-2.5 py-1.5`
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { Label } from '../ui/label'
 
 interface RenamePropertyModalProps {
   propertyId: string
@@ -59,23 +59,27 @@ export function RenamePropertyModal({ propertyId, currentName, onClose }: Rename
   return (
     <Modal title="Renomear propriedade" onClose={onClose} width={400} closeOnBackdropClick={false}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">NOVO NOME</span>
-          <input value={nome} onChange={(e) => setNome(e.target.value)} className={inputClass} />
-        </label>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="rename-property-name" className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">
+            NOVO NOME
+          </Label>
+          <Input id="rename-property-name" value={nome} onChange={(e) => setNome(e.target.value)} />
+        </div>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">CONFIRME SUA SENHA</span>
-          <input
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="rename-property-password" className="text-[11px] font-bold tracking-wide text-(--color-ink-faint)">
+            CONFIRME SUA SENHA
+          </Label>
+          <Input
+            id="rename-property-password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className={inputClass}
             autoComplete="current-password"
           />
           <span className="text-[11px] text-(--color-ink-faint)">Renomear uma propriedade é uma mudança sensível — confirme com sua senha atual.</span>
-        </label>
+        </div>
 
         {status === 'wrong-password' && (
           <p className="text-[12px] font-medium text-(--color-danger)" role="alert">
@@ -88,13 +92,9 @@ export function RenamePropertyModal({ propertyId, currentName, onClose }: Rename
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={!nome.trim() || !password || status === 'saving'}
-          className="rounded-xl bg-(--color-brand) py-2.5 text-[14px] font-bold text-white transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <Button type="submit" disabled={!nome.trim() || !password || status === 'saving'} className="h-auto rounded-xl py-2.5 text-[14px] font-bold">
           {status === 'saving' ? 'Confirmando…' : 'Salvar novo nome'}
-        </button>
+        </Button>
       </form>
     </Modal>
   )

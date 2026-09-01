@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import type { PropertySummary, SiloSummary } from '../../types/silo'
-import { ChevronDownIcon, ChevronLeftIcon, PencilIcon, PlusIcon, TrashIcon } from '../icons'
+import { ChevronDownIcon, ChevronLeftIcon, HomeIcon, PencilIcon, PlusIcon, TrashIcon } from '../icons'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu'
 
 interface PropertySiloSwitcherProps {
   properties: PropertySummary[]
@@ -36,17 +37,22 @@ export function PropertySiloSwitcher({
   // nome atual em `properties` a cada render, pra não travar num nome antigo se a
   // propriedade for renomeada com o submenu aberto.
   const [viewPropertyId, setViewPropertyId] = useState<string | null>(null)
-  const rootRef = useRef<HTMLDivElement>(null)
 
   const activePropertyName = properties.find((p) => p.id === activePropertyId)?.nome ?? '—'
   const activeSiloName = silos.find((s) => s.id === activeSiloId)?.nome ?? '—'
   const viewProperty = viewPropertyId ? properties.find((p) => p.id === viewPropertyId) ?? null : null
 
-  function close() {
-    setIsOpen(false)
-    setConfirm(null)
-    setViewPropertyId(null)
+  // DropdownMenu já cobre clique fora/Escape (Base UI Menu) — aqui só reseta o
+  // estado interno (confirmação de exclusão, submenu de silos) sempre que fecha,
+  // não importa se foi um clique numa ação ou um dismiss externo.
+  function handleOpenChange(open: boolean) {
+    setIsOpen(open)
+    if (!open) {
+      setConfirm(null)
+      setViewPropertyId(null)
+    }
   }
+  const close = () => handleOpenChange(false)
 
   function selectProperty(property: PropertySummary) {
     onSwitchProperty(property.id)
@@ -60,28 +66,24 @@ export function PropertySiloSwitcher({
     setConfirm(ok ? null : { kind: 'silo', id: siloId, failed: true, deleting: false })
   }
 
-  useEffect(() => {
-    if (!isOpen) return
-    function handleClick(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) close()
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [isOpen])
-
   return (
-    <div ref={rootRef} className="absolute left-1/2 -translate-x-1/2">
-      <button
-        onClick={() => (isOpen ? close() : setIsOpen(true))}
-        className="flex max-w-[70vw] items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-bold tracking-[0.1em] text-(--color-ink-soft) hover:bg-(--color-panel-soft)"
-      >
-        <span className="hidden truncate opacity-70 sm:inline">{activePropertyName} ·</span>
-        <span className="truncate">{activeSiloName}</span>
-        <ChevronDownIcon />
-      </button>
+    <div className="absolute left-1/2 -translate-x-1/2">
+      <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
+        <DropdownMenuTrigger className="glass-panel flex max-w-[70vw] items-center gap-2 rounded-full px-5 py-2.5 text-[13px] text-(--color-ink) outline-none transition-colors hover:brightness-95">
+          <span className="shrink-0">
+            <HomeIcon />
+          </span>
+          <span className="hidden shrink-0 font-bold sm:inline">Propriedade:</span>
+          <span className="truncate font-normal">
+            {activePropertyName} · {activeSiloName}
+          </span>
+          <ChevronDownIcon />
+        </DropdownMenuTrigger>
 
-      {isOpen && (
-        <div className="absolute left-1/2 top-full z-20 mt-1 w-[calc(100vw-2rem)] max-w-80 -translate-x-1/2 rounded-xl border border-(--color-line) bg-(--color-panel) py-1.5 text-left normal-case shadow-lg">
+        <DropdownMenuContent
+          align="center"
+          className="w-[calc(100vw-2rem)] max-w-80 rounded-2xl border border-(--color-line) bg-(--color-panel) py-1.5 text-left normal-case shadow-lg"
+        >
           {viewProperty === null ? (
             <>
               {properties.map((property) => {
@@ -91,7 +93,7 @@ export function PropertySiloSwitcher({
                     <button
                       onClick={() => selectProperty(property)}
                       className={`flex flex-1 items-center gap-1 truncate rounded-lg px-2.5 py-1.5 text-left text-[13px] font-semibold tracking-normal ${
-                        isActiveProperty ? 'bg-(--color-brand-soft) text-(--color-brand-dark)' : 'text-(--color-ink) hover:bg-(--color-panel-soft)'
+                        isActiveProperty ? 'bg-(--color-navy-soft) text-(--color-navy)' : 'text-(--color-ink) hover:bg-(--color-panel-soft)'
                       }`}
                     >
                       <span className="flex-1 truncate">{property.nome}</span>
@@ -117,7 +119,7 @@ export function PropertySiloSwitcher({
                     onCreateProperty()
                     close()
                   }}
-                  className="flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-[13px] font-semibold tracking-normal text-(--color-brand-dark) hover:bg-(--color-brand-soft)"
+                  className="flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-[13px] font-semibold tracking-normal text-(--color-navy) hover:bg-(--color-navy-soft)"
                 >
                   <PlusIcon /> Nova propriedade
                 </button>
@@ -172,7 +174,7 @@ export function PropertySiloSwitcher({
                           close()
                         }}
                         className={`flex-1 truncate rounded-lg px-2.5 py-1.5 text-left text-[13px] font-semibold tracking-normal ${
-                          silo.id === activeSiloId ? 'bg-(--color-brand-soft) text-(--color-brand-dark)' : 'text-(--color-ink) hover:bg-(--color-panel-soft)'
+                          silo.id === activeSiloId ? 'bg-(--color-navy-soft) text-(--color-navy)' : 'text-(--color-ink) hover:bg-(--color-panel-soft)'
                         }`}
                       >
                         {silo.nome}
@@ -195,14 +197,14 @@ export function PropertySiloSwitcher({
                   onCreateSilo()
                   close()
                 }}
-                className="mx-1.5 mt-0.5 flex w-[calc(100%-0.75rem)] items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-[12px] font-semibold tracking-normal text-(--color-brand-dark) hover:bg-(--color-brand-soft)"
+                className="mx-1.5 mt-0.5 flex w-[calc(100%-0.75rem)] items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-[12px] font-semibold tracking-normal text-(--color-navy) hover:bg-(--color-navy-soft)"
               >
                 <PlusIcon /> Novo silo em {viewProperty.nome}
               </button>
             </>
           )}
-        </div>
-      )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   )
 }

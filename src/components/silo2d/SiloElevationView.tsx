@@ -107,8 +107,8 @@ export function SiloElevationView({ dims, volume }: { dims: SiloDimensions; volu
           <stop offset="100%" stopColor="#a3792f" />
         </linearGradient>
         <linearGradient id="elevAirGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-app-from)" />
-          <stop offset="100%" stopColor="var(--color-app-to)" />
+          <stop offset="0%" stopColor="var(--color-panel)" />
+          <stop offset="100%" stopColor="var(--color-panel)" />
         </linearGradient>
       </defs>
 

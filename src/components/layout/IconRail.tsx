@@ -1,5 +1,6 @@
 import { BellIcon, ChartIcon, ClipboardIcon, GearIcon, HelpIcon, HomeIcon, ShieldIcon } from '../icons'
 import type { UserRole } from '../../types/silo'
+import { Button } from '../ui/button'
 
 interface IconRailProps {
   active: string
@@ -29,30 +30,29 @@ export function IconRail({ active, role, alertCount, onSelect, onOpenSettings, o
   return (
     // Barra inferior fixa no celular (nav típica de app mobile); vira rail vertical à
     // esquerda a partir do breakpoint `sm`, como sempre foi no desktop.
-    <nav className="fixed inset-x-0 bottom-0 z-30 flex shrink-0 items-center justify-around border-t border-(--color-line) bg-(--color-panel) py-1.5 sm:static sm:inset-auto sm:z-auto sm:w-14 sm:flex-col sm:items-center sm:justify-between sm:border-t-0 sm:border-r sm:py-4">
+    <nav className="fixed inset-x-0 bottom-0 z-30 flex shrink-0 items-center justify-around border-t border-(--color-line) bg-(--color-panel) py-1.5 sm:static sm:inset-auto sm:z-auto sm:w-14 sm:flex-col sm:items-center sm:justify-between sm:border-t-0 sm:bg-transparent sm:py-4">
       <div className="flex items-center gap-1 sm:flex-col">
         {navItems.map((item) => (
-          <button
+          <Button
             key={item.id}
+            variant="ghost"
             title={item.label}
             onClick={item.onClick}
-            className={`flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${
-              active === item.id
-                ? 'bg-(--color-brand-soft) text-(--color-brand-dark)'
-                : 'text-(--color-ink-faint) hover:bg-(--color-panel-soft) hover:text-(--color-ink-soft)'
+            className={`h-12 w-12 rounded-xl text-(--color-icon) transition-colors [&>svg]:h-6 [&>svg]:w-6 ${
+              active === item.id ? 'bg-(--color-navy-soft) hover:bg-(--color-navy-soft)' : 'hover:bg-(--color-panel-soft)'
             }`}
           >
             {item.icon}
-          </button>
+          </Button>
         ))}
-        <div className="hidden sm:my-1.5 sm:block sm:h-px sm:w-7 sm:bg-(--color-line)" />
         {actionItems.map((item) => (
-          <button
+          <Button
             key={item.id}
+            variant="ghost"
             title={item.label}
             aria-label={item.badge ? `${item.label} (${item.badge})` : item.label}
             onClick={item.onClick}
-            className="relative flex h-11 w-11 items-center justify-center rounded-xl text-(--color-ink-faint) transition-colors hover:bg-(--color-panel-soft) hover:text-(--color-ink-soft)"
+            className="relative h-12 w-12 rounded-xl text-(--color-icon) transition-colors [&>svg]:h-6 [&>svg]:w-6 hover:bg-(--color-panel-soft)"
           >
             {item.icon}
             {!!item.badge && (
@@ -60,17 +60,18 @@ export function IconRail({ active, role, alertCount, onSelect, onOpenSettings, o
                 {item.badge}
               </span>
             )}
-          </button>
+          </Button>
         ))}
       </div>
-      <button
+      <Button
+        variant="ghost"
         title="Ajuda (em breve)"
         aria-disabled="true"
         disabled
-        className="hidden h-11 w-11 cursor-not-allowed items-center justify-center rounded-xl text-(--color-ink-faint) opacity-40 sm:flex"
+        className="hidden h-12 w-12 cursor-not-allowed rounded-xl text-(--color-icon) opacity-40 [&>svg]:h-6 [&>svg]:w-6 sm:flex"
       >
         <HelpIcon />
-      </button>
+      </Button>
     </nav>
   )
 }
