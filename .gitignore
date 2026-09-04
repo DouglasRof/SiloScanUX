@@ -8,6 +8,11 @@ dist-ssr
 # Prints/mídia local (pode conter segredos, ex: chave de API) — nunca commitar
 midias-ignore/
 
+# Docs internos (diagnóstico de segurança, contrato de API detalhado) — repo é
+# público, isso fica só local
+ROADMAP.md
+BACKEND_HANDOFF.md
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

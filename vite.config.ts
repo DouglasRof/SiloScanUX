@@ -40,6 +40,11 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
+  // host: true expõe o servidor na rede local (não só localhost), pra testar em
+  // celular de verdade na mesma Wi-Fi.
+  server: {
+    host: true,
+  },
   test: {
     environment: 'node',
     // Exclude nested Claude Code worktrees — otherwise their copies of these same
